@@ -77,7 +77,7 @@ Rules:
 - Each section MUST be 1-2 sentences only`;
 }
 
-const START_THIS_SYSTEM = `You are a highly practical builder who has shipped dozens of products. You give one specific, immediate action — never a list of options. Write like you're giving advice to a smart friend over coffee. No markdown, no bullet points. Plain sentences only.`;
+const START_THIS_SYSTEM = `You are a highly practical execution coach. You give guided, fill-in-the-blank playbooks — never abstract advice. Every output must be something the user can DO immediately, not THINK about. Write like you're handing someone a worksheet at a workshop. No markdown formatting, no bullet points with dashes or asterisks. Plain text only. Use numbered lists where needed.`;
 
 function startThisPrompt(idea: IdeaFeedItem): string {
   return `Given this idea:
@@ -85,19 +85,23 @@ function startThisPrompt(idea: IdeaFeedItem): string {
 Title: "${idea.title}"
 Description: "${idea.subtext}"
 
-Generate ONE immediate action the user can take in under 10 minutes that moves this idea forward. Then describe the concrete output they'll have when done.
+Generate a guided execution playbook with exactly 3 sections. The user should be able to act on this in under 10 minutes without thinking.
 
-Return in EXACTLY this format (no other text, no markdown):
+Return in EXACTLY this format (no other text, no markdown, no bullet dashes):
 
-ACTION: <One clear, specific instruction. Tell them exactly what to do, where to go, and what to write down. Must be completable in under 10 minutes. Must produce something tangible.>
+FIRST_STEP: <1-2 sentences. A specific setup instruction — tell them exactly what to open, go to, or pull up right now. Must be a DOING task, not a thinking task.>
 
-OUTPUT: <One sentence describing the concrete deliverable they'll have after completing the action. Make it feel valuable.>
+DO_THIS_NOW: <2-3 sentences. The core action. Tell them exactly what to fill in, write down, calculate, or create. Be direct and commanding. Reference the template below.>
+
+TEMPLATE: <A fill-in-the-blank template using ________ for blanks. Include clear labels for each blank. Make it structured so the user just fills in their specifics. Use newlines to separate sections. This should feel like a worksheet they complete, not text they read.>
 
 Rules:
-- Must be specific enough that the user can start immediately without thinking
-- No vague advice like "research your market" or "think about your audience"
-- No multiple options or "you could also" suggestions
-- The action must produce a real artifact: a message, a list, a calculation, a post, a document
+- FIRST_STEP must be a physical action (open an app, go to a website, pull up a document) — never "think about" or "consider"
+- DO_THIS_NOW must reference the template and tell them to fill it in
+- TEMPLATE must use ________ (8 underscores) for every blank
+- TEMPLATE must have at least 4 blanks to fill in
+- TEMPLATE must feel like a real worksheet, not a paragraph with gaps
+- No vague advice anywhere — every sentence must tell them to DO something
 - Write for someone who has never done this before`;
 }
 
@@ -125,17 +129,22 @@ function parseValidation(raw: string): IdeaValidation | null {
 }
 
 function parseStartThis(raw: string): StartThisOutput | null {
-  const actionMatch = raw.match(/ACTION:\s*([\s\S]+?)(?=\n\s*OUTPUT:|$)/);
-  const outputMatch = raw.match(/OUTPUT:\s*([\s\S]+?)$/);
+  const firstStepMatch = raw.match(/FIRST_STEP:\s*([\s\S]+?)(?=\n\s*DO_THIS_NOW:|$)/);
+  const doThisMatch = raw.match(/DO_THIS_NOW:\s*([\s\S]+?)(?=\n\s*TEMPLATE:|$)/);
+  const templateMatch = raw.match(/TEMPLATE:\s*([\s\S]+?)$/);
 
-  if (!actionMatch || !outputMatch) return null;
+  if (!firstStepMatch || !doThisMatch || !templateMatch) return null;
 
-  const action = sanitise(actionMatch[1], 500);
-  const output = sanitise(outputMatch[1], 200);
+  const firstStep = sanitise(firstStepMatch[1], 300);
+  const doThisNow = sanitise(doThisMatch[1], 400);
+  // Templates keep newlines — only strip markdown, don't collapse lines
+  const template = stripMarkdown(templateMatch[1]).slice(0, 1200);
 
-  if (action.length < 20 || output.length < 15) return null;
+  if (firstStep.length < 15 || doThisNow.length < 15 || template.length < 30) {
+    return null;
+  }
 
-  return { action, output };
+  return { firstStep, doThisNow, template };
 }
 
 // ---------------------------------------------------------------------------

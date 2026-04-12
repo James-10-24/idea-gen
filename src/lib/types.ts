@@ -16,6 +16,7 @@ export interface IdeaValidation {
 }
 
 export interface StartThisOutput {
-  action: string;
-  output: string;
+  firstStep: string;
+  doThisNow: string;
+  template: string;
 }

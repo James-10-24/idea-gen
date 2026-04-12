@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { mockIdeas } from "@/lib/mockIdeas";
 import { IdeaValidation, StartThisOutput } from "@/lib/types";
@@ -12,6 +12,7 @@ import OutputPanel from "@/components/idea/OutputPanel";
 
 export default function IdeaDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const idea = mockIdeas.find((i) => i.id === params.id);
 
   const [validation, setValidation] = useState<IdeaValidation | null>(null);
@@ -19,6 +20,8 @@ export default function IdeaDetailPage() {
   const [output, setOutput] = useState<StartThisOutput | null>(null);
   const [startLoading, setStartLoading] = useState(false);
   const [startError, setStartError] = useState(false);
+  const [nextStepLoading, setNextStepLoading] = useState(false);
+  const outputRef = useRef<HTMLDivElement>(null);
 
   const fetchValidation = useCallback(async () => {
     setValidationError(false);
@@ -42,9 +45,7 @@ export default function IdeaDetailPage() {
     fetchValidation();
   }, [params.id, fetchValidation]);
 
-  const handleStart = async () => {
-    setStartLoading(true);
-    setStartError(false);
+  const fetchAction = async () => {
     try {
       const res = await fetch("/api/start-this", {
         method: "POST",
@@ -52,13 +53,42 @@ export default function IdeaDetailPage() {
         body: JSON.stringify({ id: params.id }),
       });
       if (!res.ok) throw new Error("Failed");
-      const data = await res.json();
-      setOutput(data);
+      return await res.json();
     } catch {
-      setStartError(true);
-    } finally {
-      setStartLoading(false);
+      return null;
     }
+  };
+
+  const handleStart = async () => {
+    setStartLoading(true);
+    setStartError(false);
+    const data = await fetchAction();
+    if (data) {
+      setOutput(data);
+      // Scroll to output after render
+      setTimeout(() => {
+        outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    } else {
+      setStartError(true);
+    }
+    setStartLoading(false);
+  };
+
+  const handleNextStep = async () => {
+    setNextStepLoading(true);
+    const data = await fetchAction();
+    if (data) {
+      setOutput(data);
+      setTimeout(() => {
+        outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    }
+    setNextStepLoading(false);
+  };
+
+  const handleTryAnother = () => {
+    router.push("/");
   };
 
   // Not found state
@@ -126,7 +156,16 @@ export default function IdeaDetailPage() {
         </div>
       )}
 
-      {output && <OutputPanel data={output} />}
+      <div ref={outputRef}>
+        {output && (
+          <OutputPanel
+            data={output}
+            onNextStep={handleNextStep}
+            nextStepLoading={nextStepLoading}
+            onTryAnother={handleTryAnother}
+          />
+        )}
+      </div>
     </>
   );
 }

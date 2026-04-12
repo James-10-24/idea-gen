@@ -95,6 +95,24 @@ export function getReturnMessage(stats: SessionStats): ReturnMessage | null {
   return { headline, subtext };
 }
 
+// ---------------------------------------------------------------------------
+// Usage limit
+// ---------------------------------------------------------------------------
+
+const FREE_LIMIT = 3;
+
+export function isAtLimit(stats?: SessionStats): boolean {
+  const s = stats ?? loadStats();
+  return s.totalOutputs >= FREE_LIMIT;
+}
+
+export function outputsRemaining(stats?: SessionStats): number {
+  const s = stats ?? loadStats();
+  return Math.max(0, FREE_LIMIT - s.totalOutputs);
+}
+
+export const FREE_LIMIT_COUNT = FREE_LIMIT;
+
 /** Clear stats (dev convenience) */
 export function resetStats(): void {
   if (typeof window === "undefined") return;

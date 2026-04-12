@@ -3,6 +3,7 @@ import FeedList from "@/components/feed/FeedList";
 import OnboardingCard from "@/components/feed/OnboardingCard";
 import ContinueCard from "@/components/feed/ContinueCard";
 import ReturnCard from "@/components/feed/ReturnCard";
+import LimitCard from "@/components/feed/LimitCard";
 
 export default function HomePage() {
   return (
@@ -15,6 +16,7 @@ export default function HomePage() {
           Turn free time into ideas you can act on.
         </p>
       </div>
+      <LimitCard />
       <ReturnCard />
       <ContinueCard />
       <OnboardingCard />

@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 interface PrimaryActionPanelProps {
   onStart: () => void;
   loading: boolean;
   disabled: boolean;
+  atLimit?: boolean;
 }
 
 const loadingMessages = [
@@ -18,6 +20,7 @@ export default function PrimaryActionPanel({
   onStart,
   loading,
   disabled,
+  atLimit,
 }: PrimaryActionPanelProps) {
   const [msgIndex, setMsgIndex] = useState(0);
 
@@ -28,6 +31,27 @@ export default function PrimaryActionPanel({
     }, 1500);
     return () => clearInterval(interval);
   }, [loading]);
+
+  if (atLimit) {
+    return (
+      <div className="mt-6">
+        <div className="rounded-2xl bg-zinc-50 px-4 py-4 text-center">
+          <p className="text-[13px] font-medium text-zinc-600">
+            You&apos;ve used your free sessions
+          </p>
+          <p className="mt-0.5 text-[12px] text-zinc-400">
+            You can still browse and review your past work.
+          </p>
+          <Link
+            href="/"
+            className="mt-3 inline-block rounded-xl bg-zinc-900 px-5 py-2.5 text-[13px] font-medium text-white transition-all active:scale-[0.97]"
+          >
+            Browse ideas
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mt-6">

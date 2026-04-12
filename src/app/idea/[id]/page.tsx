@@ -26,7 +26,7 @@ import { buildFilledTemplate } from "@/components/idea/EditableTemplate";
 import { needsCommitment, buildCommitmentStep } from "@/lib/commitment";
 import { shouldFinalize, buildFinalizationStep } from "@/lib/finalization";
 import { getSuggestions } from "@/lib/suggestions";
-import { recordFinalization } from "@/lib/sessionStats";
+import { recordFinalization, isAtLimit } from "@/lib/sessionStats";
 import WhatsNext from "@/components/idea/WhatsNext";
 import FirstStepToast from "@/components/idea/FirstStepToast";
 import ResumeBanner from "@/components/idea/ResumeBanner";
@@ -73,6 +73,7 @@ export default function IdeaDetailPage() {
   const [feedback, setFeedback] = useState<FeedbackState>(emptyFeedback);
   const [realOutcome, setRealOutcome] = useState<OutcomeState>(emptyOutcome);
   const [hydrated, setHydrated] = useState(false);
+  const [atLimit, setAtLimit] = useState(false);
   const [showFirstToast, setShowFirstToast] = useState(false);
   const [isRestored, setIsRestored] = useState(false);
   const [restoredSavedAt, setRestoredSavedAt] = useState<number | null>(null);
@@ -123,6 +124,7 @@ export default function IdeaDetailPage() {
     }
 
     setHydrated(true);
+    setAtLimit(isAtLimit());
   }, [searchParams, hydrated, params.id]);
 
   // -----------------------------------------------------------------------
@@ -495,6 +497,7 @@ export default function IdeaDetailPage() {
           onStart={handleStart}
           loading={startLoading}
           disabled={!validation}
+          atLimit={atLimit && completedSteps.length === 0}
         />
       )}
 

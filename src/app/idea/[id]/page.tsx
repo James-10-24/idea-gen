@@ -4,11 +4,20 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { mockIdeas } from "@/lib/mockIdeas";
+import { getGoal } from "@/lib/goals";
 import { IdeaValidation, StartThisOutput } from "@/lib/types";
 import IdeaHero from "@/components/idea/IdeaHero";
 import ValidationSprint from "@/components/idea/ValidationSprint";
 import PrimaryActionPanel from "@/components/idea/PrimaryActionPanel";
+import GoalBanner from "@/components/idea/GoalBanner";
+import ProgressLog from "@/components/idea/ProgressLog";
 import OutputPanel from "@/components/idea/OutputPanel";
+
+interface CompletedStep {
+  stepTitle: string;
+  instruction: string;
+  done: boolean;
+}
 
 export default function IdeaDetailPage() {
   const params = useParams<{ id: string }>();
@@ -21,13 +30,14 @@ export default function IdeaDetailPage() {
   // Step progression state
   const [currentStep, setCurrentStep] = useState<StartThisOutput | null>(null);
   const [stepNumber, setStepNumber] = useState(0);
-  const [previousSteps, setPreviousSteps] = useState<
-    Array<{ stepTitle: string; instruction: string }>
-  >([]);
+  const [completedSteps, setCompletedSteps] = useState<CompletedStep[]>([]);
+  const [currentStepDone, setCurrentStepDone] = useState(false);
   const [startLoading, setStartLoading] = useState(false);
   const [startError, setStartError] = useState(false);
   const [nextStepLoading, setNextStepLoading] = useState(false);
   const outputRef = useRef<HTMLDivElement>(null);
+
+  const goal = idea ? getGoal(idea.id) : "";
 
   const fetchValidation = useCallback(async () => {
     setValidationError(false);
@@ -79,7 +89,8 @@ export default function IdeaDetailPage() {
     if (data) {
       setCurrentStep(data);
       setStepNumber(1);
-      setPreviousSteps([]);
+      setCompletedSteps([]);
+      setCurrentStepDone(false);
       setTimeout(() => {
         outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 100);
@@ -93,18 +104,27 @@ export default function IdeaDetailPage() {
     if (!currentStep) return;
     setNextStepLoading(true);
 
-    // Add current step to history
-    const updatedHistory = [
-      ...previousSteps,
-      { stepTitle: currentStep.stepTitle, instruction: currentStep.instruction },
+    // Move current step to completed log
+    const updatedCompleted = [
+      ...completedSteps,
+      {
+        stepTitle: currentStep.stepTitle,
+        instruction: currentStep.instruction,
+        done: currentStepDone,
+      },
     ];
+    const historyForAPI = updatedCompleted.map((s) => ({
+      stepTitle: s.stepTitle,
+      instruction: s.instruction,
+    }));
     const nextNum = stepNumber + 1;
 
-    const data = await fetchAction(nextNum, updatedHistory);
+    const data = await fetchAction(nextNum, historyForAPI);
     if (data) {
-      setPreviousSteps(updatedHistory);
+      setCompletedSteps(updatedCompleted);
       setCurrentStep(data);
       setStepNumber(nextNum);
+      setCurrentStepDone(false);
       setTimeout(() => {
         outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 100);
@@ -112,9 +132,25 @@ export default function IdeaDetailPage() {
     setNextStepLoading(false);
   };
 
+  const handleMarkCurrentDone = () => {
+    setCurrentStepDone((prev) => !prev);
+  };
+
+  const handleTogglePreviousDone = (index: number) => {
+    setCompletedSteps((prev) =>
+      prev.map((step, i) =>
+        i === index ? { ...step, done: !step.done } : step
+      )
+    );
+  };
+
   const handleTryAnother = () => {
     router.push("/");
   };
+
+  const totalSteps = stepNumber;
+  const doneCount =
+    completedSteps.filter((s) => s.done).length + (currentStepDone ? 1 : 0);
 
   // Not found state
   if (!idea) {
@@ -142,6 +178,15 @@ export default function IdeaDetailPage() {
   return (
     <>
       <IdeaHero idea={idea} />
+
+      {/* Goal banner — shows once steps begin */}
+      {currentStep && (
+        <GoalBanner
+          goal={goal}
+          completedCount={doneCount}
+          totalSteps={totalSteps}
+        />
+      )}
 
       {validationError ? (
         <div className="mt-5 rounded-xl bg-white p-4 text-center shadow-[0_1px_2px_rgba(0,0,0,0.03),0_0_0_1px_rgba(0,0,0,0.04)]">
@@ -181,11 +226,22 @@ export default function IdeaDetailPage() {
         </div>
       )}
 
+      {/* Progress log of previous steps */}
+      {completedSteps.length > 0 && (
+        <ProgressLog
+          steps={completedSteps}
+          onToggleDone={handleTogglePreviousDone}
+        />
+      )}
+
+      {/* Current step */}
       <div ref={outputRef}>
         {currentStep && (
           <OutputPanel
             data={currentStep}
             stepNumber={stepNumber}
+            isDone={currentStepDone}
+            onMarkDone={handleMarkCurrentDone}
             onNextStep={handleNextStep}
             nextStepLoading={nextStepLoading}
             onTryAnother={handleTryAnother}

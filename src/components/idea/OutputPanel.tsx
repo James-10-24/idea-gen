@@ -46,6 +46,8 @@ const nextStepMessages = [
 interface OutputPanelProps {
   data: StartThisOutput;
   stepNumber: number;
+  isDone: boolean;
+  onMarkDone: () => void;
   onNextStep: () => void;
   nextStepLoading: boolean;
   onTryAnother: () => void;
@@ -54,6 +56,8 @@ interface OutputPanelProps {
 export default function OutputPanel({
   data,
   stepNumber,
+  isDone,
+  onMarkDone,
   onNextStep,
   nextStepLoading,
   onTryAnother,
@@ -73,18 +77,22 @@ export default function OutputPanel({
 
   return (
     <div className="mt-6 animate-in">
-      {/* Step header */}
-      <div className="mb-3 flex items-center gap-2.5">
-        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900 text-[12px] font-bold text-white">
-          {stepNumber}
+      {/* Step header — reframed */}
+      <div className="mb-3">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-zinc-300">
+          Step {stepNumber}
         </span>
-        <h3 className="text-[16px] font-semibold tracking-[-0.01em] text-zinc-900">
+        <h3 className="mt-0.5 text-[17px] font-semibold leading-tight tracking-[-0.01em] text-zinc-900">
           {data.stepTitle}
         </h3>
       </div>
 
       {/* Card */}
-      <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.04)]">
+      <div
+        className={`overflow-hidden rounded-2xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.04)] transition-opacity duration-300 ${
+          isDone ? "opacity-60" : ""
+        }`}
+      >
         {/* Instruction */}
         <div className="p-4">
           <h4 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-zinc-300">
@@ -95,7 +103,6 @@ export default function OutputPanel({
           </p>
         </div>
 
-        {/* Divider */}
         <div className="mx-4 border-t border-zinc-100" />
 
         {/* Template */}
@@ -111,25 +118,29 @@ export default function OutputPanel({
           </pre>
         </div>
 
-        {/* Full copy footer */}
-        <div className="flex border-t border-zinc-100 px-4 py-3">
-          <CopyButton text={fullText} label="Copy everything" />
-        </div>
-      </div>
-
-      {/* Step progress indicator */}
-      <div className="mt-5 flex items-center justify-center gap-1.5">
-        {Array.from({ length: stepNumber }).map((_, i) => (
-          <div
-            key={i}
-            className={`h-1.5 rounded-full transition-all duration-300 ${
-              i === stepNumber - 1
-                ? "w-6 bg-zinc-900"
-                : "w-1.5 bg-zinc-200"
+        {/* Footer: copy + mark done */}
+        <div className="flex items-center justify-between border-t border-zinc-100 px-4 py-3">
+          <CopyButton text={fullText} label="Copy all" />
+          <button
+            onClick={onMarkDone}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium transition-all duration-200 active:scale-[0.97] ${
+              isDone
+                ? "bg-emerald-50 text-emerald-600"
+                : "bg-zinc-50 text-zinc-400 hover:bg-emerald-50 hover:text-emerald-600"
             }`}
-          />
-        ))}
-        <div className="h-1.5 w-1.5 rounded-full bg-zinc-100" />
+          >
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+              <path
+                d="M3 8.5L6.5 12L13 4"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            {isDone ? "Done" : "Mark as done"}
+          </button>
+        </div>
       </div>
 
       {/* Generate next step */}
@@ -144,11 +155,11 @@ export default function OutputPanel({
             <span>{nextStepMessages[msgIndex]}</span>
           </span>
         ) : (
-          `Generate step ${stepNumber + 1}`
+          "Generate next step"
         )}
       </button>
       <p className="mt-1.5 text-center text-[11px] text-zinc-400">
-        Keep building momentum — each step moves you closer.
+        Each step builds on the last — keep going.
       </p>
 
       {/* Try another idea */}

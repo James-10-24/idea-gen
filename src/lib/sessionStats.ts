@@ -76,21 +76,21 @@ export function getReturnMessage(stats: SessionStats): ReturnMessage | null {
   let headline: string;
 
   if (hours < 12) {
-    headline = "Back for another one?";
+    headline = "Ready to ship another one?";
   } else if (days < 1) {
-    headline = "You built something earlier today.";
+    headline = "You shipped something earlier today.";
   } else if (days === 1) {
-    headline = "You built something yesterday.";
+    headline = "You shipped something yesterday.";
   } else if (days <= 5) {
-    headline = `It's been ${days} days — ready to build something?`;
+    headline = `It's been ${days} days — ready to ship something?`;
   } else {
-    headline = "Ready to pick up where you left off?";
+    headline = "Ready to create something new?";
   }
 
   const subtext =
     stats.totalOutputs === 1
-      ? "You've created 1 output so far. Want to do another 10-minute session?"
-      : `You've created ${stats.totalOutputs} outputs so far. Want to do another?`;
+      ? "You've shipped 1 usable output. Want to create another in 10 minutes?"
+      : `You've shipped ${stats.totalOutputs} usable outputs. Want to create another?`;
 
   return { headline, subtext };
 }

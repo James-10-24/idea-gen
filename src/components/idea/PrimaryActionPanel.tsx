@@ -11,8 +11,8 @@ interface PrimaryActionPanelProps {
 }
 
 const loadingMessages = [
+  "Building your first draft…",
   "Turning idea into action…",
-  "Drafting your first move…",
   "Making it concrete…",
 ];
 
@@ -40,13 +40,13 @@ export default function PrimaryActionPanel({
             You&apos;ve used your free sessions
           </p>
           <p className="mt-0.5 text-[12px] text-zinc-400">
-            You can still browse and review your past work.
+            Unlock unlimited to keep shipping.
           </p>
           <Link
             href="/"
             className="mt-3 inline-block rounded-xl bg-zinc-900 px-5 py-2.5 text-[13px] font-medium text-white transition-all active:scale-[0.97]"
           >
-            Browse ideas
+            See options
           </Link>
         </div>
       </div>
@@ -73,7 +73,7 @@ export default function PrimaryActionPanel({
       </button>
       {!loading && !disabled && (
         <p className="mt-1.5 text-center text-[11px] text-zinc-400">
-          Get one concrete action you can do in under 10 minutes.
+          Walk away with something usable in under 10 minutes.
         </p>
       )}
     </div>

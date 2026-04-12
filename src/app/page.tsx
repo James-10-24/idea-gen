@@ -13,7 +13,7 @@ export default function HomePage() {
           Idea → Income
         </h1>
         <p className="mt-0.5 text-[13px] text-zinc-400">
-          Turn free time into ideas you can act on.
+          Ship something useful in 10 minutes.
         </p>
       </div>
       <LimitCard />

@@ -11,7 +11,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Idea → Income",
-  description: "Turn free time into ideas you can act on.",
+  description: "Ship something useful in 10 minutes. Turn your thoughts into posts, messages, and actions you can use today.",
 };
 
 export const viewport: Viewport = {

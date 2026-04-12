@@ -5,8 +5,8 @@ export default function WhatHappensNext() {
         What happens next
       </h4>
       <p className="mt-1 text-[13px] leading-[1.5] text-zinc-400">
-        You&apos;ll get a realistic validation of this idea, then one
-        concrete step you can do in under 10 minutes.
+        You&apos;ll get a quick reality check, then guided steps to
+        create something you can post, send, or use — in under 10 minutes.
       </p>
     </div>
   );

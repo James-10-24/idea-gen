@@ -31,14 +31,14 @@ export default function OnboardingCard() {
   return (
     <div className="mb-4 animate-in-fast overflow-hidden rounded-2xl bg-zinc-900 px-4 py-4 shadow-sm">
       <h2 className="text-[15px] font-semibold leading-snug text-white">
-        Turn free time into ideas you can act on
+        Create something you can post, send, or use today
       </h2>
 
       <div className="mt-3 space-y-2">
         {[
-          { num: "1", text: "Pick an idea" },
-          { num: "2", text: "Get a guided first step" },
-          { num: "3", text: "Build momentum in minutes" },
+          { num: "1", text: "Pick a topic" },
+          { num: "2", text: "Get a guided draft in minutes" },
+          { num: "3", text: "Walk away with something usable" },
         ].map((s) => (
           <div key={s.num} className="flex items-center gap-2.5">
             <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-[11px] font-bold text-white/70">
@@ -54,7 +54,7 @@ export default function OnboardingCard() {
           onClick={handleShowMe}
           className="flex-1 rounded-xl bg-white px-4 py-2.5 text-[13px] font-semibold text-zinc-900 transition-all active:scale-[0.97]"
         >
-          Show me how
+          Try it now
         </button>
         <button
           onClick={handleSkip}

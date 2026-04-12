@@ -10,6 +10,7 @@ import IdeaHero from "@/components/idea/IdeaHero";
 import ValidationSprint from "@/components/idea/ValidationSprint";
 import PrimaryActionPanel from "@/components/idea/PrimaryActionPanel";
 import GoalBanner from "@/components/idea/GoalBanner";
+import BuildBoard, { Artifact } from "@/components/idea/BuildBoard";
 import ProgressLog from "@/components/idea/ProgressLog";
 import OutputPanel from "@/components/idea/OutputPanel";
 
@@ -32,6 +33,7 @@ export default function IdeaDetailPage() {
   const [currentStep, setCurrentStep] = useState<StartThisOutput | null>(null);
   const [stepNumber, setStepNumber] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<CompletedStep[]>([]);
+  const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [currentOutcome, setCurrentOutcome] = useState<StepOutcome | null>(null);
   const [startLoading, setStartLoading] = useState(false);
   const [startError, setStartError] = useState(false);
@@ -93,6 +95,7 @@ export default function IdeaDetailPage() {
       setCurrentStep(data);
       setStepNumber(1);
       setCompletedSteps([]);
+      setArtifacts([]);
       setCurrentOutcome(null);
       setTimeout(() => {
         outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -107,13 +110,22 @@ export default function IdeaDetailPage() {
     if (!currentStep) return;
     setNextStepLoading(true);
 
-    // Move current step to completed log
+    // Move current step to completed log + artifacts
     const updatedCompleted: CompletedStep[] = [
       ...completedSteps,
       {
         stepTitle: currentStep.stepTitle,
         instruction: currentStep.instruction,
         done: currentOutcome === "done" || currentOutcome === "useful",
+        outcome: currentOutcome,
+      },
+    ];
+    const updatedArtifacts: Artifact[] = [
+      ...artifacts,
+      {
+        stepNumber,
+        stepTitle: currentStep.stepTitle,
+        template: currentStep.template,
         outcome: currentOutcome,
       },
     ];
@@ -126,6 +138,7 @@ export default function IdeaDetailPage() {
     const data = await fetchAction(nextNum, historyForAPI, currentOutcome);
     if (data) {
       setCompletedSteps(updatedCompleted);
+      setArtifacts(updatedArtifacts);
       setCurrentStep(data);
       setStepNumber(nextNum);
       setCurrentOutcome(null);
@@ -188,6 +201,16 @@ export default function IdeaDetailPage() {
           goal={goal}
           completedCount={doneCount}
           totalSteps={totalSteps}
+        />
+      )}
+
+      {/* Build Board — shows once artifacts exist */}
+      {artifacts.length > 0 && (
+        <BuildBoard
+          ideaTitle={idea.title}
+          goal={goal}
+          completedSteps={completedSteps}
+          artifacts={artifacts}
         />
       )}
 

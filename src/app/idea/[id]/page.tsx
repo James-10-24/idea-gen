@@ -35,6 +35,7 @@ const emptyFeedback: FeedbackState = {
   usefulness: null,
   hardest: null,
   continueLater: null,
+  resultSignal: null,
   freeText: "",
 };
 

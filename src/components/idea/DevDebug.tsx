@@ -77,6 +77,7 @@ export default function DevDebug({
                   usefulness: feedback.usefulness,
                   hardest: feedback.hardest,
                   continueLater: feedback.continueLater,
+                  resultSignal: feedback.resultSignal,
                   freeText: feedback.freeText
                     ? `"${feedback.freeText.slice(0, 50)}..."`
                     : null,

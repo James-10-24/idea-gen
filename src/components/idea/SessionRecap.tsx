@@ -9,11 +9,13 @@ import { useState } from "react";
 type UsefulnessRating = "not" | "a-bit" | "useful" | "very";
 type HardestPart = "understanding" | "doing" | "next" | "motivation";
 type ContinueLater = "no" | "maybe" | "yes";
+export type ResultSignal = "none" | "small" | "useful" | "money";
 
 export interface FeedbackState {
   usefulness: UsefulnessRating | null;
   hardest: HardestPart | null;
   continueLater: ContinueLater | null;
+  resultSignal: ResultSignal | null;
   freeText: string;
 }
 
@@ -97,6 +99,13 @@ export default function SessionRecap({
     { value: "yes", label: "Yes" },
   ];
 
+  const resultLabels: Array<{ value: ResultSignal; label: string }> = [
+    { value: "none", label: "Not yet" },
+    { value: "small", label: "Got a small result" },
+    { value: "useful", label: "Got something useful" },
+    { value: "money", label: "This could make money" },
+  ];
+
   const buildSummary = () => {
     const lines = [
       `SESSION FEEDBACK`,
@@ -112,6 +121,7 @@ export default function SessionRecap({
       `  Usefulness: ${feedback.usefulness ?? "(not answered)"}`,
       `  Hardest part: ${feedback.hardest ?? "(not answered)"}`,
       `  Would continue later: ${feedback.continueLater ?? "(not answered)"}`,
+      `  Result: ${feedback.resultSignal ?? "(not answered)"}`,
     ];
     if (feedback.freeText.trim()) {
       lines.push(`  Note: ${feedback.freeText.trim()}`);
@@ -126,7 +136,7 @@ export default function SessionRecap({
   };
 
   const hasAnyFeedback =
-    feedback.usefulness || feedback.hardest || feedback.continueLater;
+    feedback.usefulness || feedback.hardest || feedback.continueLater || feedback.resultSignal;
 
   return (
     <div className="mt-5 animate-in-fast overflow-hidden rounded-2xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.04)]">
@@ -205,6 +215,23 @@ export default function SessionRecap({
               label={o.label}
               active={feedback.continueLater === o.value}
               onClick={() => update({ continueLater: o.value })}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Q4: Result signal */}
+      <div className="px-4 py-3">
+        <p className="text-[12px] font-medium text-zinc-600">
+          Did this lead to anything real?
+        </p>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {resultLabels.map((o) => (
+            <Chip
+              key={o.value}
+              label={o.label}
+              active={feedback.resultSignal === o.value}
+              onClick={() => update({ resultSignal: o.value })}
             />
           ))}
         </div>

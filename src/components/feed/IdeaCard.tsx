@@ -6,9 +6,10 @@ import TagBadge from "./TagBadge";
 interface IdeaCardProps {
   idea: IdeaFeedItem;
   recommended?: boolean;
+  preview?: string | null;
 }
 
-export default function IdeaCard({ idea, recommended }: IdeaCardProps) {
+export default function IdeaCard({ idea, recommended, preview }: IdeaCardProps) {
   return (
     <Link
       href={`/idea/${idea.id}`}
@@ -25,6 +26,11 @@ export default function IdeaCard({ idea, recommended }: IdeaCardProps) {
       <p className="mt-1 text-[13px] leading-[1.5] text-zinc-400">
         {idea.subtext}
       </p>
+      {preview && (
+        <p className="mt-1.5 rounded-lg bg-zinc-50 px-2.5 py-1.5 text-[12px] italic leading-[1.5] text-zinc-400">
+          {preview}
+        </p>
+      )}
       <div className="mt-2.5 flex items-center gap-1.5">
         <TagBadge label={idea.moneyTag} colorClass={moneyTagColor(idea.moneyTag)} />
         <TagBadge label={idea.effortTag} colorClass={effortTagColor(idea.effortTag)} />

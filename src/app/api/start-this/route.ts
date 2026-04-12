@@ -6,7 +6,7 @@ import { StepContext } from "@/lib/types";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { id, stepNumber, previousSteps } = body;
+    const { id, stepNumber, previousSteps, lastOutcome } = body;
 
     if (!id || typeof id !== "string") {
       return NextResponse.json({ error: "Missing idea id" }, { status: 400 });
@@ -19,7 +19,11 @@ export async function POST(req: NextRequest) {
 
     const context: StepContext | undefined =
       stepNumber && stepNumber > 1
-        ? { stepNumber, previousSteps: previousSteps ?? [] }
+        ? {
+            stepNumber,
+            previousSteps: previousSteps ?? [],
+            lastOutcome: lastOutcome ?? undefined,
+          }
         : undefined;
 
     const output = await generateStartThis(idea, context);

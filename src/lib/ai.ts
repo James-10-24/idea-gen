@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { IdeaFeedItem, IdeaValidation, StartThisOutput, StepContext } from "./types";
+import { IdeaFeedItem, IdeaValidation, StartThisOutput, StepContext, StepOutcome } from "./types";
 import { getValidation, getStartThis } from "./mockIdeaDetails";
 
 // ---------------------------------------------------------------------------
@@ -79,6 +79,21 @@ Rules:
 
 const START_THIS_SYSTEM = `You are a highly practical execution coach guiding someone step-by-step through turning an idea into reality. Each step you generate must build logically on the previous steps. You give fill-in-the-blank worksheets — never abstract advice. Every output must be something the user can DO immediately. No markdown formatting, no bullet dashes or asterisks. Plain text only.`;
 
+function outcomeDirective(outcome?: StepOutcome): string {
+  switch (outcome) {
+    case "done":
+      return "The user completed the previous step fully. Generate the next logical step that builds on their progress and pushes forward.";
+    case "partly":
+      return "The user only partly finished the previous step. Generate a step that helps them complete the unfinished part in a simpler, more focused way. Break it down further. Do not skip ahead.";
+    case "stuck":
+      return "The user got stuck on the previous step. Generate a smaller, easier unblock step — something they can definitely do in 5 minutes that removes the blocker. Do not repeat the same step. Find an alternative angle or a prerequisite they may have missed.";
+    case "useful":
+      return "The user got a useful result from the previous step and has momentum. Generate the next step that capitalises on that energy — push them further and faster toward a concrete outcome.";
+    default:
+      return "Generate the next logical step.";
+  }
+}
+
 function startThisPrompt(idea: IdeaFeedItem, context?: StepContext): string {
   const stepNum = context?.stepNumber ?? 1;
 
@@ -87,7 +102,8 @@ function startThisPrompt(idea: IdeaFeedItem, context?: StepContext): string {
     const stepsSummary = context.previousSteps
       .map((s, i) => `Step ${i + 1} — "${s.stepTitle}": ${s.instruction}`)
       .join("\n");
-    previousContext = `\nThe user has already completed these steps:\n${stepsSummary}\n\nYou MUST generate Step ${stepNum} — the NEXT logical action that builds on what they've already done. Do NOT repeat any previous step. Move the idea forward toward a concrete outcome (a product, a sale, a launched asset, etc.).\n`;
+    const directive = outcomeDirective(context.lastOutcome);
+    previousContext = `\nThe user has worked through these steps:\n${stepsSummary}\n\n${directive}\n\nYou MUST generate Step ${stepNum}. Do NOT repeat any previous step. Move toward a concrete outcome (a product, a sale, a launched asset, etc.).\n`;
   }
 
   return `Given this idea:

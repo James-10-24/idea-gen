@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { mockIdeas } from "@/lib/mockIdeas";
 import { getGoal } from "@/lib/goals";
-import { IdeaValidation, StartThisOutput } from "@/lib/types";
+import { IdeaValidation, StartThisOutput, StepOutcome } from "@/lib/types";
 import IdeaHero from "@/components/idea/IdeaHero";
 import ValidationSprint from "@/components/idea/ValidationSprint";
 import PrimaryActionPanel from "@/components/idea/PrimaryActionPanel";
@@ -17,6 +17,7 @@ interface CompletedStep {
   stepTitle: string;
   instruction: string;
   done: boolean;
+  outcome: StepOutcome | null;
 }
 
 export default function IdeaDetailPage() {
@@ -31,7 +32,7 @@ export default function IdeaDetailPage() {
   const [currentStep, setCurrentStep] = useState<StartThisOutput | null>(null);
   const [stepNumber, setStepNumber] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<CompletedStep[]>([]);
-  const [currentStepDone, setCurrentStepDone] = useState(false);
+  const [currentOutcome, setCurrentOutcome] = useState<StepOutcome | null>(null);
   const [startLoading, setStartLoading] = useState(false);
   const [startError, setStartError] = useState(false);
   const [nextStepLoading, setNextStepLoading] = useState(false);
@@ -63,7 +64,8 @@ export default function IdeaDetailPage() {
 
   const fetchAction = async (
     targetStepNumber: number,
-    history: Array<{ stepTitle: string; instruction: string }>
+    history: Array<{ stepTitle: string; instruction: string }>,
+    lastOutcome?: StepOutcome | null
   ): Promise<StartThisOutput | null> => {
     try {
       const res = await fetch("/api/start-this", {
@@ -73,6 +75,7 @@ export default function IdeaDetailPage() {
           id: params.id,
           stepNumber: targetStepNumber,
           previousSteps: history,
+          lastOutcome: lastOutcome ?? undefined,
         }),
       });
       if (!res.ok) throw new Error("Failed");
@@ -90,7 +93,7 @@ export default function IdeaDetailPage() {
       setCurrentStep(data);
       setStepNumber(1);
       setCompletedSteps([]);
-      setCurrentStepDone(false);
+      setCurrentOutcome(null);
       setTimeout(() => {
         outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 100);
@@ -105,12 +108,13 @@ export default function IdeaDetailPage() {
     setNextStepLoading(true);
 
     // Move current step to completed log
-    const updatedCompleted = [
+    const updatedCompleted: CompletedStep[] = [
       ...completedSteps,
       {
         stepTitle: currentStep.stepTitle,
         instruction: currentStep.instruction,
-        done: currentStepDone,
+        done: currentOutcome === "done" || currentOutcome === "useful",
+        outcome: currentOutcome,
       },
     ];
     const historyForAPI = updatedCompleted.map((s) => ({
@@ -119,12 +123,12 @@ export default function IdeaDetailPage() {
     }));
     const nextNum = stepNumber + 1;
 
-    const data = await fetchAction(nextNum, historyForAPI);
+    const data = await fetchAction(nextNum, historyForAPI, currentOutcome);
     if (data) {
       setCompletedSteps(updatedCompleted);
       setCurrentStep(data);
       setStepNumber(nextNum);
-      setCurrentStepDone(false);
+      setCurrentOutcome(null);
       setTimeout(() => {
         outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 100);
@@ -132,8 +136,8 @@ export default function IdeaDetailPage() {
     setNextStepLoading(false);
   };
 
-  const handleMarkCurrentDone = () => {
-    setCurrentStepDone((prev) => !prev);
+  const handleOutcomeSelect = (outcome: StepOutcome) => {
+    setCurrentOutcome(outcome);
   };
 
   const handleTogglePreviousDone = (index: number) => {
@@ -149,8 +153,7 @@ export default function IdeaDetailPage() {
   };
 
   const totalSteps = stepNumber;
-  const doneCount =
-    completedSteps.filter((s) => s.done).length + (currentStepDone ? 1 : 0);
+  const doneCount = completedSteps.filter((s) => s.done).length;
 
   // Not found state
   if (!idea) {
@@ -240,8 +243,9 @@ export default function IdeaDetailPage() {
           <OutputPanel
             data={currentStep}
             stepNumber={stepNumber}
-            isDone={currentStepDone}
-            onMarkDone={handleMarkCurrentDone}
+            isFirstStep={stepNumber === 1 && completedSteps.length === 0}
+            outcome={currentOutcome}
+            onOutcomeSelect={handleOutcomeSelect}
             onNextStep={handleNextStep}
             nextStepLoading={nextStepLoading}
             onTryAnother={handleTryAnother}

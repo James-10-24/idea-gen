@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { StartThisOutput } from "@/lib/types";
+import { StartThisOutput, StepOutcome } from "@/lib/types";
+import OutcomeSelector from "./OutcomeSelector";
 
 function CopyButton({ text, label }: { text: string; label: string }) {
   const [copied, setCopied] = useState(false);
@@ -40,14 +41,15 @@ function CopyButton({ text, label }: { text: string; label: string }) {
 const nextStepMessages = [
   "Building on your progress…",
   "Generating your next move…",
-  "Planning the next step…",
+  "Adapting to your result…",
 ];
 
 interface OutputPanelProps {
   data: StartThisOutput;
   stepNumber: number;
-  isDone: boolean;
-  onMarkDone: () => void;
+  isFirstStep: boolean;
+  outcome: StepOutcome | null;
+  onOutcomeSelect: (outcome: StepOutcome) => void;
   onNextStep: () => void;
   nextStepLoading: boolean;
   onTryAnother: () => void;
@@ -56,8 +58,9 @@ interface OutputPanelProps {
 export default function OutputPanel({
   data,
   stepNumber,
-  isDone,
-  onMarkDone,
+  isFirstStep,
+  outcome,
+  onOutcomeSelect,
   onNextStep,
   nextStepLoading,
   onTryAnother,
@@ -77,7 +80,14 @@ export default function OutputPanel({
 
   return (
     <div className="mt-6 animate-in">
-      {/* Step header — reframed */}
+      {/* Contextual label for steps after the first */}
+      {!isFirstStep && (
+        <p className="mb-3 text-[12px] text-zinc-400">
+          Based on your last result, here&apos;s the best next move.
+        </p>
+      )}
+
+      {/* Step header */}
       <div className="mb-3">
         <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-zinc-300">
           Step {stepNumber}
@@ -88,11 +98,7 @@ export default function OutputPanel({
       </div>
 
       {/* Card */}
-      <div
-        className={`overflow-hidden rounded-2xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.04)] transition-opacity duration-300 ${
-          isDone ? "opacity-60" : ""
-        }`}
-      >
+      <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.04)]">
         {/* Instruction */}
         <div className="p-4">
           <h4 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-zinc-300">
@@ -118,36 +124,20 @@ export default function OutputPanel({
           </pre>
         </div>
 
-        {/* Footer: copy + mark done */}
-        <div className="flex items-center justify-between border-t border-zinc-100 px-4 py-3">
+        {/* Footer: copy all */}
+        <div className="flex border-t border-zinc-100 px-4 py-3">
           <CopyButton text={fullText} label="Copy all" />
-          <button
-            onClick={onMarkDone}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium transition-all duration-200 active:scale-[0.97] ${
-              isDone
-                ? "bg-emerald-50 text-emerald-600"
-                : "bg-zinc-50 text-zinc-400 hover:bg-emerald-50 hover:text-emerald-600"
-            }`}
-          >
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-              <path
-                d="M3 8.5L6.5 12L13 4"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            {isDone ? "Done" : "Mark as done"}
-          </button>
         </div>
       </div>
 
-      {/* Generate next step */}
+      {/* Outcome check-in */}
+      <OutcomeSelector selected={outcome} onSelect={onOutcomeSelect} />
+
+      {/* Generate next step — enabled once outcome is selected */}
       <button
         onClick={onNextStep}
-        disabled={nextStepLoading}
-        className="mt-4 w-full rounded-2xl bg-zinc-900 px-5 py-3.5 text-[15px] font-semibold text-white shadow-[0_1px_3px_rgba(0,0,0,0.2)] transition-all duration-150 hover:bg-zinc-800 active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100"
+        disabled={nextStepLoading || !outcome}
+        className="mt-4 w-full rounded-2xl bg-zinc-900 px-5 py-3.5 text-[15px] font-semibold text-white shadow-[0_1px_3px_rgba(0,0,0,0.2)] transition-all duration-150 hover:bg-zinc-800 active:scale-[0.97] disabled:opacity-30 disabled:active:scale-100"
       >
         {nextStepLoading ? (
           <span className="flex items-center justify-center gap-2.5">
@@ -158,9 +148,11 @@ export default function OutputPanel({
           "Generate next step"
         )}
       </button>
-      <p className="mt-1.5 text-center text-[11px] text-zinc-400">
-        Each step builds on the last — keep going.
-      </p>
+      {!outcome && (
+        <p className="mt-1.5 text-center text-[11px] text-zinc-400">
+          Tell us how it went to get a tailored next step.
+        </p>
+      )}
 
       {/* Try another idea */}
       <button

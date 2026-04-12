@@ -21,8 +21,11 @@ export interface StartThisOutput {
   template: string;
 }
 
+export type StepOutcome = "done" | "partly" | "stuck" | "useful";
+
 /** Passed to the API so the AI can build on previous work. */
 export interface StepContext {
   stepNumber: number;
   previousSteps: Array<{ stepTitle: string; instruction: string }>;
+  lastOutcome?: StepOutcome;
 }

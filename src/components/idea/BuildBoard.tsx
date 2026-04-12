@@ -15,6 +15,7 @@ interface BuildBoardProps {
   goal: string;
   completedSteps: Array<{ stepTitle: string; done: boolean }>;
   artifacts: Artifact[];
+  onShare?: () => void;
 }
 
 function outcomeLabel(o: StepOutcome | null): string {
@@ -51,8 +52,10 @@ export default function BuildBoard({
   goal,
   completedSteps,
   artifacts,
+  onShare,
 }: BuildBoardProps) {
   const [copied, setCopied] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
   const recentArtifacts = artifacts.slice(-4);
@@ -202,58 +205,57 @@ export default function BuildBoard({
             </div>
           )}
 
-          {/* Copy project summary */}
-          <div className="border-t border-zinc-100 px-4 py-3">
+          {/* Actions */}
+          <div className="flex gap-2 border-t border-zinc-100 px-4 py-3">
             <button
               onClick={handleCopy}
-              className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-zinc-50 px-3 py-2 text-[12px] font-medium text-zinc-500 transition-all duration-150 hover:bg-zinc-100 active:scale-[0.98]"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-zinc-50 px-3 py-2 text-[12px] font-medium text-zinc-500 transition-all duration-150 hover:bg-zinc-100 active:scale-[0.98]"
             >
               {copied ? (
                 <>
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                  >
-                    <path
-                      d="M3 8.5L6.5 12L13 4"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                    <path d="M3 8.5L6.5 12L13 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
-                  Summary copied
+                  Copied
                 </>
               ) : (
                 <>
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                  >
-                    <rect
-                      x="5"
-                      y="5"
-                      width="8"
-                      height="8"
-                      rx="1.5"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                    />
-                    <path
-                      d="M3 11V3.5C3 2.67 3.67 2 4.5 2H11"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                    <rect x="5" y="5" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
+                    <path d="M3 11V3.5C3 2.67 3.67 2 4.5 2H11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                   </svg>
-                  Copy project summary
+                  Copy summary
                 </>
               )}
             </button>
+            {onShare && (
+              <button
+                onClick={() => {
+                  onShare();
+                  setShareCopied(true);
+                  setTimeout(() => setShareCopied(false), 2000);
+                }}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-zinc-900 px-3 py-2 text-[12px] font-medium text-white transition-all duration-150 hover:bg-zinc-800 active:scale-[0.98]"
+              >
+                {shareCopied ? (
+                  <>
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                      <path d="M3 8.5L6.5 12L13 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    Link copied
+                  </>
+                ) : (
+                  <>
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                      <path d="M6 10L10 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                      <path d="M8.5 3.5L10.5 1.5C11.3 0.7 12.7 0.7 13.5 1.5V1.5C14.3 2.3 14.3 3.7 13.5 4.5L11.5 6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                      <path d="M7.5 12.5L5.5 14.5C4.7 15.3 3.3 15.3 2.5 14.5V14.5C1.7 13.7 1.7 12.3 2.5 11.5L4.5 9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    </svg>
+                    Share project
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       )}

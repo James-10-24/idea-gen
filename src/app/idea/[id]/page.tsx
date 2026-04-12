@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { mockIdeas } from "@/lib/mockIdeas";
 import { getGoal } from "@/lib/goals";
+import { encodeSession, decodeSession } from "@/lib/session";
 import { IdeaValidation, StartThisOutput, StepOutcome } from "@/lib/types";
 import IdeaHero from "@/components/idea/IdeaHero";
 import ValidationSprint from "@/components/idea/ValidationSprint";
@@ -34,6 +35,7 @@ const emptyFeedback: FeedbackState = {
 
 export default function IdeaDetailPage() {
   const params = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const idea = mockIdeas.find((i) => i.id === params.id);
 
@@ -50,10 +52,46 @@ export default function IdeaDetailPage() {
   const [startError, setStartError] = useState(false);
   const [nextStepLoading, setNextStepLoading] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackState>(emptyFeedback);
+  const [hydrated, setHydrated] = useState(false);
   const outputRef = useRef<HTMLDivElement>(null);
 
   const goal = idea ? getGoal(idea.id) : "";
 
+  // -----------------------------------------------------------------------
+  // Hydrate from shared session URL
+  // -----------------------------------------------------------------------
+  useEffect(() => {
+    if (hydrated) return;
+    const sessionParam = searchParams.get("session");
+    if (!sessionParam) {
+      setHydrated(true);
+      return;
+    }
+
+    const decoded = decodeSession(sessionParam);
+    if (!decoded) {
+      // Invalid session — silently ignore, continue normal flow
+      setHydrated(true);
+      return;
+    }
+
+    setCompletedSteps(decoded.completedSteps);
+    setArtifacts(decoded.artifacts);
+    setStepNumber(decoded.stepNumber);
+    if (decoded.currentStep) {
+      setCurrentStep(decoded.currentStep);
+    }
+    setHydrated(true);
+
+    // Clean URL without reloading (remove ?session= param)
+    const url = new URL(window.location.href);
+    url.searchParams.delete("session");
+    window.history.replaceState({}, "", url.toString());
+  }, [searchParams, hydrated]);
+
+  // -----------------------------------------------------------------------
+  // Validation
+  // -----------------------------------------------------------------------
   const fetchValidation = useCallback(async () => {
     setValidationError(false);
     setValidation(null);
@@ -76,6 +114,9 @@ export default function IdeaDetailPage() {
     fetchValidation();
   }, [params.id, fetchValidation]);
 
+  // -----------------------------------------------------------------------
+  // Step generation
+  // -----------------------------------------------------------------------
   const fetchAction = async (
     targetStepNumber: number,
     history: Array<{ stepTitle: string; instruction: string }>,
@@ -177,6 +218,25 @@ export default function IdeaDetailPage() {
     router.push("/");
   };
 
+  // -----------------------------------------------------------------------
+  // Share
+  // -----------------------------------------------------------------------
+  const handleShare = async () => {
+    const encoded = encodeSession(
+      completedSteps,
+      artifacts,
+      currentStep,
+      stepNumber
+    );
+    const url = new URL(window.location.href);
+    url.search = "";
+    url.searchParams.set("session", encoded);
+    await navigator.clipboard.writeText(url.toString());
+  };
+
+  // -----------------------------------------------------------------------
+  // Derived
+  // -----------------------------------------------------------------------
   const totalSteps = stepNumber;
   const doneCount = completedSteps.filter((s) => s.done).length;
   const showRecap = completedSteps.length >= 2 || artifacts.length >= 2;
@@ -208,7 +268,7 @@ export default function IdeaDetailPage() {
     <>
       <IdeaHero idea={idea} />
 
-      {currentStep && (
+      {(currentStep || completedSteps.length > 0) && (
         <GoalBanner
           goal={goal}
           completedCount={doneCount}
@@ -216,12 +276,13 @@ export default function IdeaDetailPage() {
         />
       )}
 
-      {artifacts.length > 0 && (
+      {(artifacts.length > 0 || completedSteps.length > 0) && (
         <BuildBoard
           ideaTitle={idea.title}
           goal={goal}
           completedSteps={completedSteps}
           artifacts={artifacts}
+          onShare={handleShare}
         />
       )}
 
@@ -285,7 +346,6 @@ export default function IdeaDetailPage() {
         )}
       </div>
 
-      {/* Session recap — appears after 2+ completed steps or artifacts */}
       {showRecap && (
         <SessionRecap
           ideaTitle={idea.title}
@@ -298,7 +358,6 @@ export default function IdeaDetailPage() {
         />
       )}
 
-      {/* Dev debug — dev mode only */}
       {currentStep && (
         <DevDebug
           ideaId={params.id}

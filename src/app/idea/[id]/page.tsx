@@ -24,6 +24,7 @@ import DevDebug from "@/components/idea/DevDebug";
 import WhatHappensNext from "@/components/idea/WhatHappensNext";
 import { buildFilledTemplate } from "@/components/idea/EditableTemplate";
 import { needsCommitment, buildCommitmentStep } from "@/lib/commitment";
+import { shouldFinalize, buildFinalizationStep } from "@/lib/finalization";
 import FirstStepToast from "@/components/idea/FirstStepToast";
 import ResumeBanner from "@/components/idea/ResumeBanner";
 import OutcomeCard, { OutcomeState, emptyOutcome } from "@/components/idea/OutcomeCard";
@@ -60,6 +61,8 @@ export default function IdeaDetailPage() {
   const [currentOutcome, setCurrentOutcome] = useState<StepOutcome | null>(null);
   const [templateValues, setTemplateValues] = useState<Record<number, string>>({});
   const [isCommitmentStep, setIsCommitmentStep] = useState(false);
+  const [isFinalStep, setIsFinalStep] = useState(false);
+  const [hasFinalized, setHasFinalized] = useState(false);
   const [lastSelectedChoice, setLastSelectedChoice] = useState<string | null>(null);
   const [startLoading, setStartLoading] = useState(false);
   const [startError, setStartError] = useState(false);
@@ -185,6 +188,8 @@ export default function IdeaDetailPage() {
       setCurrentOutcome(null);
       setTemplateValues({});
       setIsCommitmentStep(false);
+      setIsFinalStep(false);
+      setHasFinalized(false);
       setLastSelectedChoice(null);
       setFeedback(emptyFeedback);
       setRealOutcome(emptyOutcome);
@@ -258,6 +263,42 @@ export default function IdeaDetailPage() {
       setIsCommitmentStep(false);
     }
 
+    // --- Finalization intercept ---
+    // If conditions are met and we haven't finalized yet, inject a final step.
+    if (
+      !isFinalStep &&
+      shouldFinalize({
+        completedCount: updatedCompleted.length,
+        artifactsCount: updatedArtifacts.length,
+        hasSelectedChoice: !!lastSelectedChoice || !!choiceForNextStep,
+        resultSignal: feedback.resultSignal,
+        alreadyFinalized: hasFinalized,
+      })
+    ) {
+      const finalStep = buildFinalizationStep(
+        params.id,
+        choiceForNextStep || lastSelectedChoice
+      );
+      setCompletedSteps(updatedCompleted);
+      setArtifacts(updatedArtifacts);
+      setCurrentStep(finalStep);
+      setStepNumber(nextNum);
+      setCurrentOutcome(null);
+      setTemplateValues({});
+      setIsFinalStep(true);
+      setNextStepLoading(false);
+      setTimeout(() => {
+        outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+      return;
+    }
+
+    // If we just completed the final step, mark as finalized
+    if (isFinalStep) {
+      setIsFinalStep(false);
+      setHasFinalized(true);
+    }
+
     // --- Normal flow: call AI for next step ---
     const historyForAPI = updatedCompleted.map((s) => ({
       stepTitle: s.stepTitle,
@@ -309,6 +350,8 @@ export default function IdeaDetailPage() {
     setCurrentOutcome(null);
     setTemplateValues({});
     setIsCommitmentStep(false);
+    setIsFinalStep(false);
+    setHasFinalized(false);
     setLastSelectedChoice(null);
     setFeedback(emptyFeedback);
     setRealOutcome(emptyOutcome);
@@ -479,6 +522,7 @@ export default function IdeaDetailPage() {
             stepNumber={stepNumber}
             isFirstStep={stepNumber === 1 && completedSteps.length === 0}
             isRestored={isRestored}
+            isFinalStep={isFinalStep}
             outcome={currentOutcome}
             onOutcomeSelect={handleOutcomeSelect}
             onNextStep={handleNextStep}

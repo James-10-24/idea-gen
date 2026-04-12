@@ -52,6 +52,7 @@ interface OutputPanelProps {
   stepNumber: number;
   isFirstStep: boolean;
   isRestored?: boolean;
+  isFinalStep?: boolean;
   outcome: StepOutcome | null;
   onOutcomeSelect: (outcome: StepOutcome) => void;
   onNextStep: () => void;
@@ -66,6 +67,7 @@ export default function OutputPanel({
   stepNumber,
   isFirstStep,
   isRestored,
+  isFinalStep,
   outcome,
   onOutcomeSelect,
   onNextStep,
@@ -107,7 +109,12 @@ export default function OutputPanel({
           ↓ Continue here
         </p>
       )}
-      {!isFirstStep && !isRestored && (
+      {isFinalStep && !isRestored && (
+        <p className="mb-3 text-[12px] font-medium text-emerald-600">
+          You&apos;ve done the work — now make it usable.
+        </p>
+      )}
+      {!isFirstStep && !isRestored && !isFinalStep && (
         <p className="mb-3 text-[12px] text-zinc-400">
           Based on your last result, here&apos;s the best next move.
         </p>
@@ -115,9 +122,16 @@ export default function OutputPanel({
 
       {/* Step header */}
       <div className="mb-3">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-zinc-300">
-          Step {stepNumber}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-zinc-300">
+            Step {stepNumber}
+          </span>
+          {isFinalStep && (
+            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 ring-1 ring-inset ring-emerald-600/10">
+              Final step
+            </span>
+          )}
+        </div>
         <h3 className="mt-0.5 text-[17px] font-semibold leading-tight tracking-[-0.01em] text-zinc-900">
           {data.stepTitle}
         </h3>

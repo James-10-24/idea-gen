@@ -16,6 +16,7 @@ interface BuildBoardProps {
   completedSteps: Array<{ stepTitle: string; done: boolean }>;
   artifacts: Artifact[];
   onShare?: () => void;
+  onSave?: () => void;
 }
 
 function outcomeLabel(o: StepOutcome | null): string {
@@ -53,9 +54,11 @@ export default function BuildBoard({
   completedSteps,
   artifacts,
   onShare,
+  onSave,
 }: BuildBoardProps) {
   const [copied, setCopied] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [saveDone, setSaveDone] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
   const recentArtifacts = artifacts.slice(-4);
@@ -228,6 +231,33 @@ export default function BuildBoard({
                 </>
               )}
             </button>
+            {onSave && (
+              <button
+                onClick={() => {
+                  onSave();
+                  setSaveDone(true);
+                  setTimeout(() => setSaveDone(false), 2000);
+                }}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-zinc-900 px-3 py-2 text-[12px] font-medium text-white transition-all duration-150 hover:bg-zinc-800 active:scale-[0.98]"
+              >
+                {saveDone ? (
+                  <>
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                      <path d="M3 8.5L6.5 12L13 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    Saved
+                  </>
+                ) : (
+                  <>
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                      <path d="M2 5V3C2 2.45 2.45 2 3 2H10L14 6V13C14 13.55 13.55 14 13 14H3C2.45 14 2 13.55 2 13V11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M5 14V9H11V14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    Save progress
+                  </>
+                )}
+              </button>
+            )}
             {onShare && (
               <button
                 onClick={() => {

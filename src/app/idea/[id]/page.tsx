@@ -7,6 +7,7 @@ import { mockIdeas } from "@/lib/mockIdeas";
 import { getGoal } from "@/lib/goals";
 import { encodeSession, decodeSession } from "@/lib/session";
 import { trackStart, trackStep2Plus } from "@/lib/metrics";
+import { saveSession, loadSavedSession, clearSavedSession } from "@/lib/savedSession";
 import { IdeaValidation, StartThisOutput, StepOutcome } from "@/lib/types";
 import IdeaHero from "@/components/idea/IdeaHero";
 import ValidationSprint from "@/components/idea/ValidationSprint";
@@ -63,36 +64,46 @@ export default function IdeaDetailPage() {
   const goal = idea ? getGoal(idea.id) : "";
 
   // -----------------------------------------------------------------------
-  // Hydrate from shared session URL
+  // Hydrate from shared session URL or saved session
   // -----------------------------------------------------------------------
   useEffect(() => {
     if (hydrated) return;
+
+    // Priority 1: shared session in URL
     const sessionParam = searchParams.get("session");
-    if (!sessionParam) {
-      setHydrated(true);
-      return;
+    if (sessionParam) {
+      const decoded = decodeSession(sessionParam);
+      if (decoded) {
+        setCompletedSteps(decoded.completedSteps);
+        setArtifacts(decoded.artifacts);
+        setStepNumber(decoded.stepNumber);
+        if (decoded.currentStep) setCurrentStep(decoded.currentStep);
+        setHydrated(true);
+        const url = new URL(window.location.href);
+        url.searchParams.delete("session");
+        window.history.replaceState({}, "", url.toString());
+        return;
+      }
     }
 
-    const decoded = decodeSession(sessionParam);
-    if (!decoded) {
-      // Invalid session — silently ignore, continue normal flow
-      setHydrated(true);
-      return;
+    // Priority 2: saved session from localStorage (via ?restore=true)
+    const shouldRestore = searchParams.get("restore") === "true";
+    if (shouldRestore) {
+      const saved = loadSavedSession();
+      if (saved && saved.ideaId === params.id) {
+        setCompletedSteps(saved.completedSteps);
+        setArtifacts(saved.artifacts);
+        setStepNumber(saved.stepNumber);
+        if (saved.currentStep) setCurrentStep(saved.currentStep);
+        // Clean URL
+        const url = new URL(window.location.href);
+        url.searchParams.delete("restore");
+        window.history.replaceState({}, "", url.toString());
+      }
     }
 
-    setCompletedSteps(decoded.completedSteps);
-    setArtifacts(decoded.artifacts);
-    setStepNumber(decoded.stepNumber);
-    if (decoded.currentStep) {
-      setCurrentStep(decoded.currentStep);
-    }
     setHydrated(true);
-
-    // Clean URL without reloading (remove ?session= param)
-    const url = new URL(window.location.href);
-    url.searchParams.delete("session");
-    window.history.replaceState({}, "", url.toString());
-  }, [searchParams, hydrated]);
+  }, [searchParams, hydrated, params.id]);
 
   // -----------------------------------------------------------------------
   // Validation
@@ -231,6 +242,21 @@ export default function IdeaDetailPage() {
   };
 
   // -----------------------------------------------------------------------
+  // Save progress
+  // -----------------------------------------------------------------------
+  const handleSave = () => {
+    if (!idea) return;
+    saveSession({
+      ideaId: idea.id,
+      ideaTitle: idea.title,
+      stepNumber,
+      currentStep,
+      completedSteps,
+      artifacts,
+    });
+  };
+
+  // -----------------------------------------------------------------------
   // Share
   // -----------------------------------------------------------------------
   const handleShare = async () => {
@@ -295,6 +321,7 @@ export default function IdeaDetailPage() {
           completedSteps={completedSteps}
           artifacts={artifacts}
           onShare={handleShare}
+          onSave={handleSave}
         />
       )}
 

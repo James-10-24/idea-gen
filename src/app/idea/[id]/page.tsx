@@ -22,6 +22,7 @@ import SessionRecap, {
 } from "@/components/idea/SessionRecap";
 import DevDebug from "@/components/idea/DevDebug";
 import WhatHappensNext from "@/components/idea/WhatHappensNext";
+import { buildFilledTemplate } from "@/components/idea/EditableTemplate";
 import FirstStepToast from "@/components/idea/FirstStepToast";
 import ResumeBanner from "@/components/idea/ResumeBanner";
 
@@ -55,6 +56,7 @@ export default function IdeaDetailPage() {
   const [completedSteps, setCompletedSteps] = useState<CompletedStep[]>([]);
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [currentOutcome, setCurrentOutcome] = useState<StepOutcome | null>(null);
+  const [templateValues, setTemplateValues] = useState<Record<number, string>>({});
   const [startLoading, setStartLoading] = useState(false);
   const [startError, setStartError] = useState(false);
   const [nextStepLoading, setNextStepLoading] = useState(false);
@@ -174,6 +176,7 @@ export default function IdeaDetailPage() {
       setCompletedSteps([]);
       setArtifacts([]);
       setCurrentOutcome(null);
+      setTemplateValues({});
       setFeedback(emptyFeedback);
       // Show first-step toast once per session
       if (!hasShownToast.current) {
@@ -202,12 +205,13 @@ export default function IdeaDetailPage() {
         outcome: currentOutcome,
       },
     ];
+    const filledTemplate = buildFilledTemplate(currentStep.template, templateValues);
     const updatedArtifacts: Artifact[] = [
       ...artifacts,
       {
         stepNumber,
         stepTitle: currentStep.stepTitle,
-        template: currentStep.template,
+        template: filledTemplate,
         outcome: currentOutcome,
       },
     ];
@@ -225,6 +229,7 @@ export default function IdeaDetailPage() {
       setCurrentStep(data);
       setStepNumber(nextNum);
       setCurrentOutcome(null);
+      setTemplateValues({});
       setTimeout(() => {
         outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 100);
@@ -254,6 +259,7 @@ export default function IdeaDetailPage() {
     setCompletedSteps([]);
     setArtifacts([]);
     setCurrentOutcome(null);
+    setTemplateValues({});
     setFeedback(emptyFeedback);
     setIsRestored(false);
     setRestoredSavedAt(null);
@@ -426,6 +432,8 @@ export default function IdeaDetailPage() {
             onNextStep={handleNextStep}
             nextStepLoading={nextStepLoading}
             onTryAnother={handleTryAnother}
+            templateValues={templateValues}
+            onTemplateValuesChange={setTemplateValues}
           />
         )}
       </div>

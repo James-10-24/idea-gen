@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { StartThisOutput, StepOutcome } from "@/lib/types";
 import OutcomeSelector from "./OutcomeSelector";
+import EditableTemplate, { buildFilledTemplate } from "./EditableTemplate";
 
 function CopyButton({ text, label }: { text: string; label: string }) {
   const [copied, setCopied] = useState(false);
@@ -56,6 +57,8 @@ interface OutputPanelProps {
   onNextStep: () => void;
   nextStepLoading: boolean;
   onTryAnother: () => void;
+  templateValues: Record<number, string>;
+  onTemplateValuesChange: (values: Record<number, string>) => void;
 }
 
 export default function OutputPanel({
@@ -68,6 +71,8 @@ export default function OutputPanel({
   onNextStep,
   nextStepLoading,
   onTryAnother,
+  templateValues,
+  onTemplateValuesChange,
 }: OutputPanelProps) {
   const [msgIndex, setMsgIndex] = useState(0);
   const [templateExpanded, setTemplateExpanded] = useState(false);
@@ -86,14 +91,13 @@ export default function OutputPanel({
     return () => clearInterval(interval);
   }, [nextStepLoading]);
 
-  const fullText = `STEP ${stepNumber}: ${data.stepTitle}\n\n${data.instruction}\n\nTEMPLATE:\n${data.template}`;
+  // Build filled text for copy
+  const filledTemplate = buildFilledTemplate(data.template, templateValues);
+  const fullText = `STEP ${stepNumber}: ${data.stepTitle}\n\n${data.instruction}\n\nTEMPLATE:\n${filledTemplate}`;
 
-  // Split template into lines for collapse
+  // Template line count for collapse
   const templateLines = data.template.split("\n").filter((l) => l.trim() !== "");
   const needsCollapse = templateLines.length > TEMPLATE_PREVIEW_LINES;
-  const visibleTemplate = templateExpanded
-    ? data.template
-    : templateLines.slice(0, TEMPLATE_PREVIEW_LINES).join("\n");
 
   return (
     <div className="mt-6 animate-in">
@@ -119,12 +123,10 @@ export default function OutputPanel({
         </h3>
       </div>
 
-      {/* Instruction card — emphasised border on restored sessions */}
+      {/* Instruction card */}
       <div
         className={`rounded-2xl bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.04)] ${
-          isRestored
-            ? "ring-2 ring-zinc-900/10"
-            : ""
+          isRestored ? "ring-2 ring-zinc-900/10" : ""
         }`}
       >
         <h4 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-zinc-300">
@@ -158,18 +160,22 @@ export default function OutputPanel({
         </p>
       )}
 
-      {/* Template — secondary, collapsible */}
+      {/* Editable template — secondary, collapsible */}
       <div className="mt-5 overflow-hidden rounded-2xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.04)]">
         <div className="flex items-center justify-between px-4 pt-3.5 pb-0">
           <h4 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-zinc-300">
             Fill this in
           </h4>
-          <CopyButton text={data.template} label="Copy" />
+          <CopyButton text={filledTemplate} label="Copy" />
         </div>
         <div className="px-4 pt-2 pb-3.5">
-          <pre className="whitespace-pre-wrap rounded-xl bg-zinc-50 p-3 font-sans text-[13px] leading-[1.7] text-zinc-600">
-            {visibleTemplate}
-          </pre>
+          <EditableTemplate
+            template={data.template}
+            values={templateValues}
+            onChange={onTemplateValuesChange}
+            expanded={templateExpanded}
+            previewLines={TEMPLATE_PREVIEW_LINES}
+          />
           {needsCollapse && (
             <button
               onClick={() => setTemplateExpanded((v) => !v)}

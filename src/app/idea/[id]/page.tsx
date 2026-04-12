@@ -18,6 +18,8 @@ import SessionRecap, {
   FeedbackState,
 } from "@/components/idea/SessionRecap";
 import DevDebug from "@/components/idea/DevDebug";
+import WhatHappensNext from "@/components/idea/WhatHappensNext";
+import FirstStepToast from "@/components/idea/FirstStepToast";
 
 interface CompletedStep {
   stepTitle: string;
@@ -53,6 +55,8 @@ export default function IdeaDetailPage() {
   const [nextStepLoading, setNextStepLoading] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackState>(emptyFeedback);
   const [hydrated, setHydrated] = useState(false);
+  const [showFirstToast, setShowFirstToast] = useState(false);
+  const hasShownToast = useRef(false);
   const outputRef = useRef<HTMLDivElement>(null);
 
   const goal = idea ? getGoal(idea.id) : "";
@@ -151,6 +155,11 @@ export default function IdeaDetailPage() {
       setArtifacts([]);
       setCurrentOutcome(null);
       setFeedback(emptyFeedback);
+      // Show first-step toast once per session
+      if (!hasShownToast.current) {
+        hasShownToast.current = true;
+        setShowFirstToast(true);
+      }
       setTimeout(() => {
         outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 100);
@@ -302,6 +311,10 @@ export default function IdeaDetailPage() {
         <ValidationSprint validation={validation} />
       )}
 
+      {!currentStep && !startError && completedSteps.length === 0 && validation && (
+        <WhatHappensNext />
+      )}
+
       {!currentStep && !startError && (
         <PrimaryActionPanel
           onStart={handleStart}
@@ -368,6 +381,8 @@ export default function IdeaDetailPage() {
           feedback={feedback}
         />
       )}
+
+      <FirstStepToast show={showFirstToast} />
     </>
   );
 }

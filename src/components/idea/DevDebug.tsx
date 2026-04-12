@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { StepOutcome } from "@/lib/types";
+import { resetOnboarding } from "@/lib/onboarding";
 import { FeedbackState } from "./SessionRecap";
 
 interface DevDebugProps {
@@ -22,8 +23,15 @@ export default function DevDebug({
   feedback,
 }: DevDebugProps) {
   const [open, setOpen] = useState(false);
+  const [resetDone, setResetDone] = useState(false);
 
   if (process.env.NODE_ENV !== "development") return null;
+
+  const handleResetOnboarding = () => {
+    resetOnboarding();
+    setResetDone(true);
+    setTimeout(() => setResetDone(false), 1500);
+  };
 
   return (
     <div className="mt-8 mb-4">
@@ -35,25 +43,35 @@ export default function DevDebug({
         dev debug
       </button>
       {open && (
-        <pre className="mt-2 overflow-x-auto rounded-lg bg-zinc-900 p-3 font-mono text-[11px] leading-[1.6] text-zinc-400">
-          {JSON.stringify(
-            {
-              ideaId,
-              stepNumber,
-              completedCount,
-              artifactsCount,
-              currentOutcome,
-              feedback: {
-                usefulness: feedback.usefulness,
-                hardest: feedback.hardest,
-                continueLater: feedback.continueLater,
-                freeText: feedback.freeText ? `"${feedback.freeText.slice(0, 50)}..."` : null,
+        <>
+          <pre className="mt-2 overflow-x-auto rounded-lg bg-zinc-900 p-3 font-mono text-[11px] leading-[1.6] text-zinc-400">
+            {JSON.stringify(
+              {
+                ideaId,
+                stepNumber,
+                completedCount,
+                artifactsCount,
+                currentOutcome,
+                feedback: {
+                  usefulness: feedback.usefulness,
+                  hardest: feedback.hardest,
+                  continueLater: feedback.continueLater,
+                  freeText: feedback.freeText
+                    ? `"${feedback.freeText.slice(0, 50)}..."`
+                    : null,
+                },
               },
-            },
-            null,
-            2
-          )}
-        </pre>
+              null,
+              2
+            )}
+          </pre>
+          <button
+            onClick={handleResetOnboarding}
+            className="mt-2 rounded bg-zinc-800 px-2.5 py-1 font-mono text-[10px] text-zinc-400 transition-colors hover:text-zinc-200"
+          >
+            {resetDone ? "✓ onboarding reset" : "reset onboarding"}
+          </button>
+        </>
       )}
     </div>
   );

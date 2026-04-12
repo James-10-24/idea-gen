@@ -22,6 +22,7 @@ import SessionRecap, {
 import DevDebug from "@/components/idea/DevDebug";
 import WhatHappensNext from "@/components/idea/WhatHappensNext";
 import FirstStepToast from "@/components/idea/FirstStepToast";
+import ResumeBanner from "@/components/idea/ResumeBanner";
 
 interface CompletedStep {
   stepTitle: string;
@@ -58,6 +59,8 @@ export default function IdeaDetailPage() {
   const [feedback, setFeedback] = useState<FeedbackState>(emptyFeedback);
   const [hydrated, setHydrated] = useState(false);
   const [showFirstToast, setShowFirstToast] = useState(false);
+  const [isRestored, setIsRestored] = useState(false);
+  const [restoredSavedAt, setRestoredSavedAt] = useState<number | null>(null);
   const hasShownToast = useRef(false);
   const outputRef = useRef<HTMLDivElement>(null);
 
@@ -95,6 +98,8 @@ export default function IdeaDetailPage() {
         setArtifacts(saved.artifacts);
         setStepNumber(saved.stepNumber);
         if (saved.currentStep) setCurrentStep(saved.currentStep);
+        setIsRestored(true);
+        setRestoredSavedAt(saved.savedAt);
         // Clean URL
         const url = new URL(window.location.href);
         url.searchParams.delete("restore");
@@ -241,6 +246,18 @@ export default function IdeaDetailPage() {
     router.push("/");
   };
 
+  const handleStartFresh = () => {
+    setCurrentStep(null);
+    setStepNumber(0);
+    setCompletedSteps([]);
+    setArtifacts([]);
+    setCurrentOutcome(null);
+    setFeedback(emptyFeedback);
+    setIsRestored(false);
+    setRestoredSavedAt(null);
+    clearSavedSession();
+  };
+
   // -----------------------------------------------------------------------
   // Save progress
   // -----------------------------------------------------------------------
@@ -302,9 +319,29 @@ export default function IdeaDetailPage() {
     );
   }
 
+  // Time-ago helper
+  const getTimeAgo = (ts: number): string => {
+    const diff = Date.now() - ts;
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "just now";
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    return `${Math.floor(hrs / 24)}d ago`;
+  };
+
   return (
     <>
       <IdeaHero idea={idea} />
+
+      {isRestored && (
+        <ResumeBanner
+          completedCount={doneCount}
+          currentStepTitle={currentStep?.stepTitle ?? null}
+          savedAgo={restoredSavedAt ? getTimeAgo(restoredSavedAt) : ""}
+          onStartFresh={handleStartFresh}
+        />
+      )}
 
       {(currentStep || completedSteps.length > 0) && (
         <GoalBanner
@@ -380,6 +417,7 @@ export default function IdeaDetailPage() {
             data={currentStep}
             stepNumber={stepNumber}
             isFirstStep={stepNumber === 1 && completedSteps.length === 0}
+            isRestored={isRestored}
             outcome={currentOutcome}
             onOutcomeSelect={handleOutcomeSelect}
             onNextStep={handleNextStep}

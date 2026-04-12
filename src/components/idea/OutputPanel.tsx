@@ -50,6 +50,7 @@ interface OutputPanelProps {
   data: StartThisOutput;
   stepNumber: number;
   isFirstStep: boolean;
+  isRestored?: boolean;
   outcome: StepOutcome | null;
   onOutcomeSelect: (outcome: StepOutcome) => void;
   onNextStep: () => void;
@@ -61,6 +62,7 @@ export default function OutputPanel({
   data,
   stepNumber,
   isFirstStep,
+  isRestored,
   outcome,
   onOutcomeSelect,
   onNextStep,
@@ -95,8 +97,13 @@ export default function OutputPanel({
 
   return (
     <div className="mt-6 animate-in">
-      {/* Contextual label for steps after the first */}
-      {!isFirstStep && (
+      {/* Contextual label */}
+      {isRestored && (
+        <p className="mb-3 text-[12px] font-medium text-zinc-500">
+          ↓ Continue here
+        </p>
+      )}
+      {!isFirstStep && !isRestored && (
         <p className="mb-3 text-[12px] text-zinc-400">
           Based on your last result, here&apos;s the best next move.
         </p>
@@ -112,8 +119,14 @@ export default function OutputPanel({
         </h3>
       </div>
 
-      {/* Instruction card */}
-      <div className="rounded-2xl bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.04)]">
+      {/* Instruction card — emphasised border on restored sessions */}
+      <div
+        className={`rounded-2xl bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.04)] ${
+          isRestored
+            ? "ring-2 ring-zinc-900/10"
+            : ""
+        }`}
+      >
         <h4 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-zinc-300">
           What to do
         </h4>

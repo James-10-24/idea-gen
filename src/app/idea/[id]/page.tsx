@@ -6,6 +6,7 @@ import Link from "next/link";
 import { mockIdeas } from "@/lib/mockIdeas";
 import { getGoal } from "@/lib/goals";
 import { encodeSession, decodeSession } from "@/lib/session";
+import { trackStart, trackStep2Plus } from "@/lib/metrics";
 import { IdeaValidation, StartThisOutput, StepOutcome } from "@/lib/types";
 import IdeaHero from "@/components/idea/IdeaHero";
 import ValidationSprint from "@/components/idea/ValidationSprint";
@@ -149,6 +150,7 @@ export default function IdeaDetailPage() {
     setStartError(false);
     const data = await fetchAction(1, []);
     if (data) {
+      trackStart(params.id);
       setCurrentStep(data);
       setStepNumber(1);
       setCompletedSteps([]);
@@ -199,6 +201,7 @@ export default function IdeaDetailPage() {
 
     const data = await fetchAction(nextNum, historyForAPI, currentOutcome);
     if (data) {
+      trackStep2Plus(params.id);
       setCompletedSteps(updatedCompleted);
       setArtifacts(updatedArtifacts);
       setCurrentStep(data);

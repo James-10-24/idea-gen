@@ -1,6 +1,10 @@
+"use client";
+
+import { useEffect } from "react";
 import Link from "next/link";
 import { IdeaFeedItem } from "@/lib/types";
 import { moneyTagColor, effortTagColor } from "@/lib/utils";
+import { trackImpression, trackClick } from "@/lib/metrics";
 import TagBadge from "./TagBadge";
 
 interface IdeaCardProps {
@@ -10,9 +14,15 @@ interface IdeaCardProps {
 }
 
 export default function IdeaCard({ idea, recommended, preview }: IdeaCardProps) {
+  // Track impression on mount (approximation — counts when rendered, not viewport entry)
+  useEffect(() => {
+    trackImpression(idea.id);
+  }, [idea.id]);
+
   return (
     <Link
       href={`/idea/${idea.id}`}
+      onClick={() => trackClick(idea.id)}
       className="group relative block rounded-2xl bg-white px-4 py-3.5 shadow-[0_1px_2px_rgba(0,0,0,0.03),0_0_0_1px_rgba(0,0,0,0.04)] transition-all duration-150 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06),0_0_0_1px_rgba(0,0,0,0.06)] active:scale-[0.98] active:bg-zinc-50/80"
     >
       {recommended && (

@@ -50,6 +50,33 @@ function sanitise(text: string, maxLen = 180): string {
   return trimToLength(stripMarkdown(text), maxLen);
 }
 
+/**
+ * Clean external-tool references from instruction text.
+ * Replaces "Go to X" / "Open X" / "Use X" patterns with self-contained framing.
+ */
+function cleanExternalRefs(instruction: string): string {
+  // Common patterns: "Go to [site]", "Open [tool]", "Use [tool] to"
+  // "Visit [url]", "Search on [site]", "Head to [site]"
+  const patterns = [
+    /(?:Go to|Visit|Head to|Navigate to|Open)\s+[A-Z][\w.]+(?:\.com|\.io|\.org|\.net)?[^.]*\.\s*/gi,
+    /(?:Use|Try|Check)\s+(?:a\s+)?(?:[\w\s]+?)(?:calculator|tool|website|app|platform)\s+(?:online|to\s+)[^.]*\.\s*/gi,
+    /(?:Search|Look up|Browse)\s+(?:on|for|in)\s+(?:Google|Reddit|Twitter|LinkedIn|YouTube|TikTok|Product Hunt|Indie Hackers|AnswerThePublic|Ubersuggest|Ahrefs|SEMrush|TradingView|Zillow|Redfin)[^.]*\.\s*/gi,
+  ];
+
+  let cleaned = instruction;
+  for (const p of patterns) {
+    cleaned = cleaned.replace(p, "");
+  }
+
+  // Clean up double spaces and leading/trailing whitespace
+  cleaned = cleaned.replace(/\s{2,}/g, " ").trim();
+
+  // If we removed too much, return original
+  if (cleaned.length < instruction.length * 0.3) return instruction;
+
+  return cleaned;
+}
+
 /** Trim template to max N lines. */
 function trimTemplate(text: string, maxLines = 8): string {
   const cleaned = stripMarkdown(text);
@@ -113,7 +140,18 @@ CRITICAL CONSTRAINTS:
 - TEMPLATE must be max 6-8 lines
 - Each line must be short (under 60 chars)
 - Use ________ (8 underscores) for blanks
-- The step must feel like a smart shortcut, not busywork`;
+- The step must feel like a smart shortcut, not busywork
+
+SELF-CONTAINED RULE (very important):
+- NEVER tell the user to go use an external tool, website, calculator, or search engine
+- Instead, EMBED the exercise directly in the template with pre-filled example values
+- If a calculation is needed, provide a worked example with realistic defaults the user can edit
+- If research is needed, provide a pre-filled framework the user fills from memory or quick knowledge
+- The user should NEVER need to leave this app to complete a step
+- Bad: "Go to Ubersuggest and search for keywords"
+- Good: "Start with this keyword analysis (edit the examples):" then provide pre-filled rows
+- Bad: "Use a compound interest calculator online"
+- Good: "Here's a worked example (change the numbers to yours):" then show Principal: $1000, Rate: 7%, etc.`;
 
 function outcomeDirective(outcome?: StepOutcome): string {
   switch (outcome) {
@@ -157,43 +195,46 @@ STEP_TITLE: <3-7 word action title>
 INSTRUCTION: <2-3 sentences. Specific commands — name tools, sites, actions. No "consider" or "think about".>
 TEMPLATE: <Fill-in-the-blank worksheet. MAX 6-8 lines. Short lines. Use ________ for blanks.>
 
-GOOD examples at the right quality:
+GOOD examples at the right quality (note: all self-contained, no external tools):
 
-Example 1 (validate idea):
+Example 1 (validate idea — self-contained check):
 STEP_TITLE: Run a 3-question validation check
-INSTRUCTION: Write your idea in one sentence. Search Google Trends, Reddit, and Twitter for each answer below. 3 yeses = pursue. Fewer = pivot.
+INSTRUCTION: Answer each question below from what you already know about this market. Be honest — gut feel counts. 3 yeses = pursue. Fewer = pivot or kill.
 TEMPLATE:
 Idea: ________
-1. Search volume growing? → YES / NO
-2. Real complaints on Reddit? → YES / NO
-3. People paying for solutions? → YES / NO
+1. Do people search for this? → YES / NO
+2. Have you seen complaints about it? → YES / NO
+3. Are people paying for solutions? → YES / NO
 Score: ________/3
 Verdict: ________ (pursue / pivot / kill)
 
-Example 2 (cold outreach):
-STEP_TITLE: Write one personalised outreach message
-INSTRUCTION: Open LinkedIn. Find one person you want to reach. Read their last 3 posts. Fill in the template using something specific they said. No pitch — ask one genuine question.
+Example 2 (cold outreach — pre-filled draft):
+STEP_TITLE: Draft one personalised message
+INSTRUCTION: Think of one person you want to reach. Fill in the template below to create a message that references something specific about them. No pitch — just one genuine question.
 TEMPLATE:
 To: ________
-Their recent post about: ________
-Message: Hi ________, I saw your post about ________. Quick question — ________?
-Why this works: references their content, zero pitch.
+Something they care about: ________
+Message: Hi ________, I noticed ________. Quick question — ________?
+Why this works: references them specifically, zero pitch.
 
-Example 3 (subscription audit):
-STEP_TITLE: Audit your subscriptions
-INSTRUCTION: Open your email. Search "subscription confirmation" and "recurring payment". List every active subscription. Cancel at least one before closing this page.
+Example 3 (financial analysis — pre-filled with defaults):
+STEP_TITLE: Calculate your real numbers
+INSTRUCTION: Start with the example values below and change them to match your situation. The defaults are realistic starting points — edit any that don't fit.
 TEMPLATE:
-1. ________ → $________/mo → Last used: ________
-2. ________ → $________/mo → Last used: ________
-3. ________ → $________/mo → Last used: ________
-Cancel now: ________ (saves $________/mo)
+Amount: $1000 (change to yours: ________)
+Rate: 7% (change to yours: ________%)
+Period: 12 months
+Expected result: $________
+Verdict: ________ (worth it / break even / not worth it)
 
 Rules:
 - Step must be SPECIFIC to this idea — not generic
 - Must feel like a smart shortcut, not busywork
 - Must produce a tangible artifact (a message, list, document, calculation)
 - Template MUST be max 6-8 lines, short and scannable
-- No "create a survey" or "do some research" — be sharper than that`;
+- No "create a survey" or "do some research" — be sharper than that
+- NEVER send user to an external tool — embed everything in the template
+- Provide pre-filled defaults when numbers or examples are needed`;
 }
 
 // ---------------------------------------------------------------------------
@@ -226,7 +267,7 @@ function parseStartThis(raw: string): StartThisOutput | null {
   if (!titleMatch || !instrMatch || !templateMatch) return null;
 
   const stepTitle = sanitise(titleMatch[1], 60);
-  const instruction = sanitise(instrMatch[1], 300);
+  const instruction = cleanExternalRefs(sanitise(instrMatch[1], 300));
   const template = trimTemplate(templateMatch[1], 8);
 
   if (stepTitle.length < 5 || instruction.length < 15 || template.length < 20) {

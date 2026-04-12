@@ -1,6 +1,35 @@
 import { IdeaFeedItem } from "./types";
 
 export const mockIdeas: IdeaFeedItem[] = [
+  // Content ideas first — strongest "wow" category
+  {
+    id: "explain-anything-simply",
+    title: "Turn Complex Ideas Into Simple, Viral Content",
+    subtext: "Make posts people actually understand and share",
+    moneyTag: "$$",
+    effortTag: "Low",
+  },
+  {
+    id: "lesson-to-linkedin-post",
+    title: "Turn One Lesson Into a LinkedIn Post",
+    subtext: "Write a post from something you learned this week",
+    moneyTag: "$$",
+    effortTag: "Low",
+  },
+  {
+    id: "cold-outreach-message-generator",
+    title: "Your Cold Messages Are Getting Ignored — Fix That",
+    subtext: "Generate outreach that actually gets replies",
+    moneyTag: "$$",
+    effortTag: "Low",
+  },
+  {
+    id: "opinion-to-viral-thread",
+    title: "Turn One Opinion Into a Thread People Share",
+    subtext: "Structure a hot take into content that spreads",
+    moneyTag: "$$",
+    effortTag: "Low",
+  },
   {
     id: "rent-affordability-reality-check",
     title: "You're Probably Overpaying Rent — Check in 60 Seconds",
@@ -16,23 +45,9 @@ export const mockIdeas: IdeaFeedItem[] = [
     effortTag: "Medium",
   },
   {
-    id: "cold-outreach-message-generator",
-    title: "Your Cold Messages Are Getting Ignored — Fix That",
-    subtext: "Generate outreach that actually gets replies",
-    moneyTag: "$$",
-    effortTag: "Low",
-  },
-  {
     id: "subscription-leak-finder",
     title: "You're Leaking Money Every Month Without Realising",
     subtext: "Find subscriptions you should cancel instantly",
-    moneyTag: "$$",
-    effortTag: "Low",
-  },
-  {
-    id: "explain-anything-simply",
-    title: "Turn Complex Ideas Into Simple, Viral Content",
-    subtext: "Make posts people actually understand and share",
     moneyTag: "$$",
     effortTag: "Low",
   },

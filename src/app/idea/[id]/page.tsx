@@ -37,6 +37,7 @@ interface CompletedStep {
   instruction: string;
   done: boolean;
   outcome: StepOutcome | null;
+  isCommitment?: boolean;
 }
 
 const emptyFeedback: FeedbackState = {
@@ -218,7 +219,7 @@ export default function IdeaDetailPage() {
 
     const filledTemplate = buildFilledTemplate(currentStep.template, templateValues);
 
-    // Archive current step
+    // Archive current step (tag whether it's a commitment step)
     const updatedCompleted: CompletedStep[] = [
       ...completedSteps,
       {
@@ -226,6 +227,7 @@ export default function IdeaDetailPage() {
         instruction: currentStep.instruction,
         done: currentOutcome === "done" || currentOutcome === "useful",
         outcome: currentOutcome,
+        isCommitment: isCommitmentStep,
       },
     ];
     const updatedArtifacts: Artifact[] = [
@@ -270,10 +272,12 @@ export default function IdeaDetailPage() {
 
     // --- Finalization intercept ---
     // If conditions are met and we haven't finalized yet, inject a final step.
+    const nonCommitmentSteps = updatedCompleted.filter((s) => !s.isCommitment).length;
     if (
       !isFinalStep &&
       shouldFinalize({
         completedCount: updatedCompleted.length,
+        nonCommitmentSteps,
         artifactsCount: updatedArtifacts.length,
         hasSelectedChoice: !!lastSelectedChoice || !!choiceForNextStep,
         resultSignal: feedback.resultSignal,

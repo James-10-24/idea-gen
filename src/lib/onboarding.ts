@@ -1,7 +1,7 @@
 const STORAGE_KEY = "idea-income-onboarding-seen";
 
-/** The recommended first idea for new users. */
-export const RECOMMENDED_IDEA_ID = "validate-before-you-waste-time";
+/** The recommended first idea — content is the strongest "wow" category. */
+export const RECOMMENDED_IDEA_ID = "explain-anything-simply";
 
 export function hasSeenOnboarding(): boolean {
   if (typeof window === "undefined") return true; // SSR safe

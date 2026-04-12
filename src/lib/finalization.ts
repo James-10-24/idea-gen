@@ -7,6 +7,7 @@ import { ResultSignal } from "../components/idea/SessionRecap";
 
 interface FinalizationContext {
   completedCount: number;
+  nonCommitmentSteps: number;
   artifactsCount: number;
   hasSelectedChoice: boolean;
   resultSignal: ResultSignal | null;
@@ -16,18 +17,28 @@ interface FinalizationContext {
 /**
  * Determines if the user has reached a state where a finalization step
  * should be offered to turn their work into something immediately usable.
+ *
+ * Requires at least 2 non-commitment steps to prevent premature finalization
+ * when commitment steps inflate the completed count.
  */
 export function shouldFinalize(ctx: FinalizationContext): boolean {
   if (ctx.alreadyFinalized) return false;
 
-  // 3+ steps completed
+  // Must have at least 2 non-commitment steps before finalizing
+  if (ctx.nonCommitmentSteps < 2) return false;
+
+  // 3+ total steps completed (including commitment)
   if (ctx.completedCount >= 3) return true;
 
-  // Selected a direction AND created at least 1 artifact
-  if (ctx.hasSelectedChoice && ctx.artifactsCount >= 1) return true;
+  // Selected a direction AND created at least 2 artifacts
+  if (ctx.hasSelectedChoice && ctx.artifactsCount >= 2) return true;
 
-  // User reported "useful" or higher result signal
-  if (ctx.resultSignal === "useful" || ctx.resultSignal === "money") return true;
+  // User reported "useful" or higher result signal AND enough steps
+  if (
+    (ctx.resultSignal === "useful" || ctx.resultSignal === "money") &&
+    ctx.nonCommitmentSteps >= 2
+  )
+    return true;
 
   return false;
 }
@@ -38,12 +49,31 @@ export function shouldFinalize(ctx: FinalizationContext): boolean {
 
 type IdeaCategory = "content" | "business" | "tool" | "validation" | "finance" | "general";
 
+/**
+ * Detect the idea category from its ID.
+ *
+ * IMPORTANT: Order matters — more specific patterns must come first.
+ * "build-a-simple-tool" must match "tool" before "content" can match "simple".
+ */
 export function detectIdeaCategory(ideaId: string): IdeaCategory {
-  if (/explain|content|simple|viral/.test(ideaId)) return "content";
+  // 1. Tool / build / product — check FIRST (contains "simple" which would false-match content)
   if (/tool|build|product/.test(ideaId)) return "tool";
-  if (/niche|validate|problem|steal/.test(ideaId)) return "validation";
+
+  // 2. Business / outreach
   if (/outreach|message/.test(ideaId)) return "business";
-  if (/rent|property|trade|subscription|money|hidden/.test(ideaId)) return "finance";
+
+  // 3. Finance / money
+  if (/rent|property|trade|subscription|hidden-money/.test(ideaId)) return "finance";
+
+  // 4. Validation / research
+  if (/niche|validate|problem|steal/.test(ideaId)) return "validation";
+
+  // 5. Content — last, uses broad terms that could match other categories
+  if (/explain|content|viral|post|thread|lesson|opinion|insight/.test(ideaId)) return "content";
+
+  // 6. Remaining finance catch (broader "money" keyword only after tool/build checked)
+  if (/money/.test(ideaId)) return "finance";
+
   return "general";
 }
 
@@ -54,9 +84,9 @@ export function detectIdeaCategory(ideaId: string): IdeaCategory {
 const templates: Record<IdeaCategory, { instruction: string; template: string }> = {
   content: {
     instruction:
-      "Turn your research into a ready-to-post piece. Fill in the template below — you should be able to copy and post this within 2 minutes.",
+      "Turn your work into a ready-to-post piece. Fill in below — you should be able to copy and post this within 2 minutes.",
     template:
-      "Platform: ________ (LinkedIn / Twitter / both)\n\nHook (first line that stops the scroll):\n________\n\nMain point (1-2 sentences):\n________\n\nExample or proof:\n________\n\nCTA (what you want readers to do):\n________",
+      "Hook:\n________\n\nPost:\n________\n\nExample:\n________\n\nCTA:\n________\n\nClear in 5 seconds? ________ (yes / needs editing)",
   },
   business: {
     instruction:

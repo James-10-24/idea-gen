@@ -25,6 +25,8 @@ import WhatHappensNext from "@/components/idea/WhatHappensNext";
 import { buildFilledTemplate } from "@/components/idea/EditableTemplate";
 import { needsCommitment, buildCommitmentStep } from "@/lib/commitment";
 import { shouldFinalize, buildFinalizationStep } from "@/lib/finalization";
+import { getSuggestions } from "@/lib/suggestions";
+import WhatsNext from "@/components/idea/WhatsNext";
 import FirstStepToast from "@/components/idea/FirstStepToast";
 import ResumeBanner from "@/components/idea/ResumeBanner";
 import OutcomeCard, { OutcomeState, emptyOutcome } from "@/components/idea/OutcomeCard";
@@ -533,6 +535,10 @@ export default function IdeaDetailPage() {
           />
         )}
       </div>
+
+      {hasFinalized && (
+        <WhatsNext suggestions={getSuggestions(params.id)} />
+      )}
 
       {showRecap && (
         <SessionRecap

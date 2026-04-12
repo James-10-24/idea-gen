@@ -13,6 +13,10 @@ import GoalBanner from "@/components/idea/GoalBanner";
 import BuildBoard, { Artifact } from "@/components/idea/BuildBoard";
 import ProgressLog from "@/components/idea/ProgressLog";
 import OutputPanel from "@/components/idea/OutputPanel";
+import SessionRecap, {
+  FeedbackState,
+} from "@/components/idea/SessionRecap";
+import DevDebug from "@/components/idea/DevDebug";
 
 interface CompletedStep {
   stepTitle: string;
@@ -20,6 +24,13 @@ interface CompletedStep {
   done: boolean;
   outcome: StepOutcome | null;
 }
+
+const emptyFeedback: FeedbackState = {
+  usefulness: null,
+  hardest: null,
+  continueLater: null,
+  freeText: "",
+};
 
 export default function IdeaDetailPage() {
   const params = useParams<{ id: string }>();
@@ -38,6 +49,7 @@ export default function IdeaDetailPage() {
   const [startLoading, setStartLoading] = useState(false);
   const [startError, setStartError] = useState(false);
   const [nextStepLoading, setNextStepLoading] = useState(false);
+  const [feedback, setFeedback] = useState<FeedbackState>(emptyFeedback);
   const outputRef = useRef<HTMLDivElement>(null);
 
   const goal = idea ? getGoal(idea.id) : "";
@@ -97,6 +109,7 @@ export default function IdeaDetailPage() {
       setCompletedSteps([]);
       setArtifacts([]);
       setCurrentOutcome(null);
+      setFeedback(emptyFeedback);
       setTimeout(() => {
         outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 100);
@@ -110,7 +123,6 @@ export default function IdeaDetailPage() {
     if (!currentStep) return;
     setNextStepLoading(true);
 
-    // Move current step to completed log + artifacts
     const updatedCompleted: CompletedStep[] = [
       ...completedSteps,
       {
@@ -167,6 +179,7 @@ export default function IdeaDetailPage() {
 
   const totalSteps = stepNumber;
   const doneCount = completedSteps.filter((s) => s.done).length;
+  const showRecap = completedSteps.length >= 2 || artifacts.length >= 2;
 
   // Not found state
   if (!idea) {
@@ -195,7 +208,6 @@ export default function IdeaDetailPage() {
     <>
       <IdeaHero idea={idea} />
 
-      {/* Goal banner — shows once steps begin */}
       {currentStep && (
         <GoalBanner
           goal={goal}
@@ -204,7 +216,6 @@ export default function IdeaDetailPage() {
         />
       )}
 
-      {/* Build Board — shows once artifacts exist */}
       {artifacts.length > 0 && (
         <BuildBoard
           ideaTitle={idea.title}
@@ -252,7 +263,6 @@ export default function IdeaDetailPage() {
         </div>
       )}
 
-      {/* Progress log of previous steps */}
       {completedSteps.length > 0 && (
         <ProgressLog
           steps={completedSteps}
@@ -260,7 +270,6 @@ export default function IdeaDetailPage() {
         />
       )}
 
-      {/* Current step */}
       <div ref={outputRef}>
         {currentStep && (
           <OutputPanel
@@ -275,6 +284,31 @@ export default function IdeaDetailPage() {
           />
         )}
       </div>
+
+      {/* Session recap — appears after 2+ completed steps or artifacts */}
+      {showRecap && (
+        <SessionRecap
+          ideaTitle={idea.title}
+          goal={goal}
+          stepsGenerated={totalSteps}
+          stepsCompleted={doneCount}
+          artifactsCount={artifacts.length}
+          feedback={feedback}
+          onFeedbackChange={setFeedback}
+        />
+      )}
+
+      {/* Dev debug — dev mode only */}
+      {currentStep && (
+        <DevDebug
+          ideaId={params.id}
+          stepNumber={stepNumber}
+          completedCount={completedSteps.length}
+          artifactsCount={artifacts.length}
+          currentOutcome={currentOutcome}
+          feedback={feedback}
+        />
+      )}
     </>
   );
 }

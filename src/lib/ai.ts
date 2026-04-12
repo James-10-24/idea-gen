@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { IdeaFeedItem, IdeaValidation, StartThisOutput } from "./types";
+import { IdeaFeedItem, IdeaValidation, StartThisOutput, StepContext } from "./types";
 import { getValidation, getStartThis } from "./mockIdeaDetails";
 
 // ---------------------------------------------------------------------------
@@ -77,31 +77,41 @@ Rules:
 - Each section MUST be 1-2 sentences only`;
 }
 
-const START_THIS_SYSTEM = `You are a highly practical execution coach. You give guided, fill-in-the-blank playbooks — never abstract advice. Every output must be something the user can DO immediately, not THINK about. Write like you're handing someone a worksheet at a workshop. No markdown formatting, no bullet points with dashes or asterisks. Plain text only. Use numbered lists where needed.`;
+const START_THIS_SYSTEM = `You are a highly practical execution coach guiding someone step-by-step through turning an idea into reality. Each step you generate must build logically on the previous steps. You give fill-in-the-blank worksheets — never abstract advice. Every output must be something the user can DO immediately. No markdown formatting, no bullet dashes or asterisks. Plain text only.`;
 
-function startThisPrompt(idea: IdeaFeedItem): string {
+function startThisPrompt(idea: IdeaFeedItem, context?: StepContext): string {
+  const stepNum = context?.stepNumber ?? 1;
+
+  let previousContext = "";
+  if (context?.previousSteps && context.previousSteps.length > 0) {
+    const stepsSummary = context.previousSteps
+      .map((s, i) => `Step ${i + 1} — "${s.stepTitle}": ${s.instruction}`)
+      .join("\n");
+    previousContext = `\nThe user has already completed these steps:\n${stepsSummary}\n\nYou MUST generate Step ${stepNum} — the NEXT logical action that builds on what they've already done. Do NOT repeat any previous step. Move the idea forward toward a concrete outcome (a product, a sale, a launched asset, etc.).\n`;
+  }
+
   return `Given this idea:
 
 Title: "${idea.title}"
 Description: "${idea.subtext}"
+${previousContext}
+Generate Step ${stepNum} of a guided execution journey. This step must be completable in under 10 minutes.
 
-Generate a guided execution playbook with exactly 3 sections. The user should be able to act on this in under 10 minutes without thinking.
+Return in EXACTLY this format (no other text, no markdown):
 
-Return in EXACTLY this format (no other text, no markdown, no bullet dashes):
+STEP_TITLE: <A short action-oriented title for this step, 3-8 words, like "Write your landing page copy" or "Send 3 cold DMs">
 
-FIRST_STEP: <1-2 sentences. A specific setup instruction — tell them exactly what to open, go to, or pull up right now. Must be a DOING task, not a thinking task.>
+INSTRUCTION: <2-4 sentences. Tell the user exactly what to do right now. Be specific — name websites, apps, or tools. Reference the template below. Every sentence must be a command, not advice.>
 
-DO_THIS_NOW: <2-3 sentences. The core action. Tell them exactly what to fill in, write down, calculate, or create. Be direct and commanding. Reference the template below.>
-
-TEMPLATE: <A fill-in-the-blank template using ________ for blanks. Include clear labels for each blank. Make it structured so the user just fills in their specifics. Use newlines to separate sections. This should feel like a worksheet they complete, not text they read.>
+TEMPLATE: <A fill-in-the-blank worksheet using ________ for blanks. Include clear labels. At least 4 blanks. Use newlines to separate sections. Must feel like a real worksheet.>
 
 Rules:
-- FIRST_STEP must be a physical action (open an app, go to a website, pull up a document) — never "think about" or "consider"
-- DO_THIS_NOW must reference the template and tell them to fill it in
+- STEP_TITLE must be a concrete action, not a vague concept
+- INSTRUCTION must tell them exactly where to go and what to do — no "think about" or "consider"
 - TEMPLATE must use ________ (8 underscores) for every blank
-- TEMPLATE must have at least 4 blanks to fill in
-- TEMPLATE must feel like a real worksheet, not a paragraph with gaps
-- No vague advice anywhere — every sentence must tell them to DO something
+- Every step must produce a tangible artifact (a message, a list, a document, a post, a calculation)
+- Do NOT repeat anything from previous steps
+- Each step should move closer to a real outcome: revenue, a launched product, a real conversation with a customer
 - Write for someone who has never done this before`;
 }
 
@@ -129,22 +139,22 @@ function parseValidation(raw: string): IdeaValidation | null {
 }
 
 function parseStartThis(raw: string): StartThisOutput | null {
-  const firstStepMatch = raw.match(/FIRST_STEP:\s*([\s\S]+?)(?=\n\s*DO_THIS_NOW:|$)/);
-  const doThisMatch = raw.match(/DO_THIS_NOW:\s*([\s\S]+?)(?=\n\s*TEMPLATE:|$)/);
+  const titleMatch = raw.match(/STEP_TITLE:\s*([\s\S]+?)(?=\n\s*INSTRUCTION:|$)/);
+  const instrMatch = raw.match(/INSTRUCTION:\s*([\s\S]+?)(?=\n\s*TEMPLATE:|$)/);
   const templateMatch = raw.match(/TEMPLATE:\s*([\s\S]+?)$/);
 
-  if (!firstStepMatch || !doThisMatch || !templateMatch) return null;
+  if (!titleMatch || !instrMatch || !templateMatch) return null;
 
-  const firstStep = sanitise(firstStepMatch[1], 300);
-  const doThisNow = sanitise(doThisMatch[1], 400);
+  const stepTitle = sanitise(titleMatch[1], 80);
+  const instruction = sanitise(instrMatch[1], 500);
   // Templates keep newlines — only strip markdown, don't collapse lines
   const template = stripMarkdown(templateMatch[1]).slice(0, 1200);
 
-  if (firstStep.length < 15 || doThisNow.length < 15 || template.length < 30) {
+  if (stepTitle.length < 5 || instruction.length < 15 || template.length < 30) {
     return null;
   }
 
-  return { firstStep, doThisNow, template };
+  return { stepTitle, instruction, template };
 }
 
 // ---------------------------------------------------------------------------
@@ -211,24 +221,27 @@ export async function generateValidation(
 }
 
 export async function generateStartThis(
-  idea: IdeaFeedItem
+  idea: IdeaFeedItem,
+  context?: StepContext
 ): Promise<StartThisOutput> {
+  const stepNum = context?.stepNumber ?? 1;
+
   if (!isAIEnabled()) {
-    return getStartThis(idea.id);
+    return getStartThis(idea.id, stepNum);
   }
 
   try {
-    const raw = await callLLM(START_THIS_SYSTEM, startThisPrompt(idea));
+    const raw = await callLLM(START_THIS_SYSTEM, startThisPrompt(idea, context));
     const parsed = parseStartThis(raw);
 
     if (!parsed) {
-      console.warn(`[ai] StartThis parse failed for ${idea.id}, using mock`);
-      return getStartThis(idea.id);
+      console.warn(`[ai] StartThis parse failed for ${idea.id} step ${stepNum}, using mock`);
+      return getStartThis(idea.id, stepNum);
     }
 
     return parsed;
   } catch (err) {
-    console.error(`[ai] StartThis error for ${idea.id}:`, err);
-    return getStartThis(idea.id);
+    console.error(`[ai] StartThis error for ${idea.id} step ${stepNum}:`, err);
+    return getStartThis(idea.id, stepNum);
   }
 }

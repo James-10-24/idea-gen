@@ -16,7 +16,13 @@ export interface IdeaValidation {
 }
 
 export interface StartThisOutput {
-  firstStep: string;
-  doThisNow: string;
+  stepTitle: string;
+  instruction: string;
   template: string;
+}
+
+/** Passed to the API so the AI can build on previous work. */
+export interface StepContext {
+  stepNumber: number;
+  previousSteps: Array<{ stepTitle: string; instruction: string }>;
 }

@@ -107,110 +107,116 @@ const validationMap: Record<string, IdeaValidation> = {
   },
 };
 
-const startThisMap: Record<string, StartThisOutput> = {
+/** Step 1 mocks — keyed by idea id */
+const step1Map: Record<string, StartThisOutput> = {
   "rent-affordability-reality-check": {
-    firstStep:
-      "Open your bank app and screenshot last month's transactions. You need your actual numbers, not guesses.",
-    doThisNow:
-      "List your 5 biggest recurring monthly expenses below, then plug them into the formula. Your real rent budget is what's left — not the 30% rule landlords quote.",
+    stepTitle: "Calculate your real rent budget",
+    instruction:
+      "Open your bank app and screenshot last month's transactions. List your 5 biggest recurring monthly expenses below, then plug them into the formula. Your real rent budget is what's left — not the 30% rule landlords quote.",
     template:
       "Monthly income (after tax): $________\n\nTop 5 recurring expenses:\n1. ________ → $________\n2. ________ → $________\n3. ________ → $________\n4. ________ → $________\n5. ________ → $________\n\nTotal expenses: $________\n\nReal rent budget:\n($________ × 0.30) − $________ = $________\n\nVerdict: I can actually afford $________ /month in rent.",
   },
   "property-deal-roi-quick-analyzer": {
-    firstStep:
-      "Open Zillow or Redfin right now and find one property listing you've been considering (or pick any that catches your eye).",
-    doThisNow:
-      "Pull the three numbers below from the listing page. Plug them into the formula. If the cap rate is above 6%, this deal deserves a deeper look. Below 4%? Walk away.",
+    stepTitle: "Run a quick cap rate check",
+    instruction:
+      "Open Zillow or Redfin right now. Find one property listing you've been eyeing. Pull the numbers below from the listing page and plug them into the formula. Above 6% cap rate? Worth a deeper look.",
     template:
       "Property address: ________\nListing price: $________\nEstimated monthly rent: $________\nAnnual property tax: $________\nEstimated annual insurance: $________\n\nCalculation:\nAnnual rent: $________ × 12 = $________\nAnnual expenses: $________ + $________ = $________\nNet operating income: $________ − $________ = $________\nCap rate: ($________ ÷ $________) × 100 = ________%\n\nVerdict: ________ (worth exploring / pass / needs more data)",
   },
   "cold-outreach-message-generator": {
-    firstStep:
-      "Open LinkedIn right now. Find one person you want to connect with — a potential client, collaborator, or mentor. Read their 3 most recent posts.",
-    doThisNow:
-      "Fill in the template below using something specific from their posts. Do not pitch. Do not sell. Ask one genuine question that shows you actually read their content.",
+    stepTitle: "Write one personalised outreach message",
+    instruction:
+      "Open LinkedIn right now. Find one person you want to connect with. Read their 3 most recent posts. Fill in the template below using something specific from their content. Do not pitch. Ask one genuine question.",
     template:
       "To: ________\nTheir role: ________\n\nSpecific thing they posted about: ________\n\nMessage:\nHi ________, I saw your post about ________. I especially liked the point about ________. Quick question — ________?\n\nWhy this works: references their actual content, asks one clear question, zero pitch.",
   },
   "subscription-leak-finder": {
-    firstStep:
-      "Open your email inbox right now. Search for \"subscription confirmation\" and \"recurring payment\". Start scrolling.",
-    doThisNow:
-      "List every active subscription below. Be honest — include the ones you forgot about. Star anything you haven't used in the last 30 days. Cancel at least one before you close this page.",
+    stepTitle: "Audit your subscriptions",
+    instruction:
+      "Open your email inbox. Search for \"subscription confirmation\" and \"recurring payment\". List every active subscription below. Star anything unused in 30+ days. Cancel at least one before you close this page.",
     template:
-      "Active subscriptions:\n1. ________ → $________/mo → Last used: ________\n2. ________ → $________/mo → Last used: ________\n3. ________ → $________/mo → Last used: ________\n4. ________ → $________/mo → Last used: ________\n5. ________ → $________/mo → Last used: ________\n6. ________ → $________/mo → Last used: ________\n\nTotal monthly spend: $________\n\nCancel immediately:\n→ ________ (saves $________/mo)\n→ ________ (saves $________/mo)\n\nMonthly savings: $________\nAnnual savings: $________",
+      "Active subscriptions:\n1. ________ → $________/mo → Last used: ________\n2. ________ → $________/mo → Last used: ________\n3. ________ → $________/mo → Last used: ________\n4. ________ → $________/mo → Last used: ________\n5. ________ → $________/mo → Last used: ________\n\nCancel immediately:\n→ ________ (saves $________/mo)\n→ ________ (saves $________/mo)\n\nMonthly savings: $________",
   },
   "explain-anything-simply": {
-    firstStep:
-      "Pick one concept from your field that people always overcomplicate. Something you could explain at a dinner party in 30 seconds.",
-    doThisNow:
-      "Write a 3-sentence explanation using only words a 12-year-old would know. Then drop it into the post template below. This is your first piece of authority content.",
+    stepTitle: "Write your first clarity post",
+    instruction:
+      "Pick one concept from your field that people always overcomplicate. Write a 3-sentence explanation using only words a 12-year-old would know. Drop it into the post template below.",
     template:
-      "Topic: ________\n\nSimple explanation (3 sentences, no jargon):\n________\n________\n________\n\nReady-to-post version:\n\"Most people overcomplicate ________.\n\nHere's the simple version:\n\n________\n\nThat's it. No jargon needed.\"\n\nPost on: ________ (LinkedIn / Twitter / both)",
+      "Topic: ________\n\nSimple explanation (3 sentences, no jargon):\n________\n________\n________\n\nReady-to-post version:\n\"Most people overcomplicate ________.\n\nHere's the simple version:\n________\n\nThat's it. No jargon needed.\"\n\nPost on: ________ (LinkedIn / Twitter / both)",
   },
   "underserved-niche-finder": {
-    firstStep:
-      "Go to reddit.com right now. You're going to search for real frustration signals — these are better than any market research report.",
-    doThisNow:
-      "Search Reddit for your industry + \"frustrated\" or \"annoying\" or \"wish there was\". Read the top 10 results. Fill in the template below with the 3 most common unresolved complaints.",
+    stepTitle: "Find 3 unresolved complaints",
+    instruction:
+      "Go to reddit.com. Search for your industry + \"frustrated\" or \"wish there was\". Read the top 10 results. Fill in the 3 most common unresolved complaints below.",
     template:
-      "Industry / area: ________\n\nReddit search used: \"________ frustrated\"\n\nTop 3 unresolved complaints:\n1. Problem: ________\n   Existing solution: ________\n   Why it's bad: ________\n\n2. Problem: ________\n   Existing solution: ________\n   Why it's bad: ________\n\n3. Problem: ________\n   Existing solution: ________\n   Why it's bad: ________\n\nStrongest niche opportunity: #________\nBecause: ________",
+      "Industry: ________\nReddit search: \"________ frustrated\"\n\n1. Problem: ________\n   Existing solution: ________\n   Why it's bad: ________\n\n2. Problem: ________\n   Existing solution: ________\n   Why it's bad: ________\n\n3. Problem: ________\n   Existing solution: ________\n   Why it's bad: ________\n\nStrongest niche: #________",
   },
   "problem-to-business-idea-converter": {
-    firstStep:
-      "Think about the last thing that genuinely annoyed you this week. Something you had to deal with that felt harder than it should be.",
-    doThisNow:
-      "Fill in the template below. By the time you finish, you'll have a structured business idea based on a real pain point you personally experience — which means you already understand the customer.",
+    stepTitle: "Structure one pain point into an idea",
+    instruction:
+      "Think about the last thing that genuinely annoyed you this week. Fill in the template below. By the time you finish, you'll have a structured business idea based on a real pain point.",
     template:
-      "The problem: ________\n\nHow I currently solve it: ________\n\nWhy that solution is bad:\n→ It takes too long because ________\n→ It costs too much because ________\n→ It's frustrating because ________\n\nA 10x better solution would:\n→ ________\n→ ________\n\nWho else has this problem: ________\n\nOne-sentence business idea:\nA ________ that helps ________ to ________ without ________.",
+      "The problem: ________\nHow I currently solve it: ________\n\nWhy that solution is bad:\n→ Too slow because ________\n→ Too expensive because ________\n→ Frustrating because ________\n\nA better solution would:\n→ ________\n→ ________\n\nWho else has this problem: ________\n\nOne-sentence idea:\nA ________ that helps ________ to ________ without ________.",
   },
   "would-you-take-this-trade": {
-    firstStep:
-      "Open TradingView (tradingview.com) — it's free, no account needed. Search for any stock or crypto ticker you're curious about.",
-    doThisNow:
-      "Set the chart to daily candles. Cover the right third of your screen with your hand or a window. Look at the visible price action and fill in your analysis below. Then reveal the rest and see how you did.",
+    stepTitle: "Analyse one chart blind",
+    instruction:
+      "Open TradingView (free, no account needed). Pick any ticker. Set to daily candles. Cover the right third of your screen. Fill in your analysis below, then reveal and review.",
     template:
-      "Ticker: ________\nTimeframe: Daily\nDate range visible: ________ to ________\n\nWhat I see:\nTrend direction: ________ (up / down / sideways)\nKey level: $________\nPattern: ________\n\nMy call: ________ (long / short / stay out)\nEntry price: $________\nStop loss: $________\nReasoning: ________\n\nAfter reveal:\nActual result: ________\nWhat I missed: ________\nLesson: ________",
+      "Ticker: ________\nDate range visible: ________ to ________\n\nTrend: ________ (up / down / sideways)\nKey level: $________\nPattern: ________\n\nMy call: ________ (long / short / stay out)\nEntry: $________\nStop loss: $________\nReasoning: ________\n\nAfter reveal:\nActual result: ________\nWhat I missed: ________\nLesson: ________",
   },
   "validate-before-you-waste-time": {
-    firstStep:
-      "Write down the idea you want to validate in one sentence. No buzzwords — just what it does and who it's for.",
-    doThisNow:
-      "Run the 3-question validation check below. Search Google Trends, Reddit, and Twitter/X for each answer. If you get 3 yeses, the idea has legs. If not, pivot before you waste time building.",
+    stepTitle: "Run a 3-question validation check",
+    instruction:
+      "Write your idea in one sentence. Then search Google Trends, Reddit, and Twitter/X for each answer below. 3 yeses = pursue. Fewer = pivot or kill.",
     template:
-      "Idea in one sentence: ________\nWho it's for: ________\n\nValidation check:\n\n1. Is search volume growing?\n   Google Trends keyword: \"________\"\n   Trend: ________ (growing / flat / declining)\n   → YES / NO\n\n2. Are real people complaining about this?\n   Reddit search: \"________\"\n   Found complaints: ________\n   → YES / NO\n\n3. Are people already paying for solutions?\n   Existing paid tools: ________\n   Price range: $________\n   → YES / NO\n\nScore: ________/3\nVerdict: ________ (pursue / pivot / kill)",
+      "Idea: ________\nWho it's for: ________\n\n1. Is search volume growing?\n   Google Trends keyword: \"________\"\n   Trend: ________ (growing / flat / declining)\n   → YES / NO\n\n2. Are real people complaining about this?\n   Reddit search: \"________\"\n   Complaints found: ________\n   → YES / NO\n\n3. Are people already paying for solutions?\n   Existing tools: ________\n   Price range: $________\n   → YES / NO\n\nScore: ________/3\nVerdict: ________ (pursue / pivot / kill)",
   },
   "build-a-simple-tool": {
-    firstStep:
-      "Think about a task you do at least once a week that involves a spreadsheet, calculator, or some repetitive manual process.",
-    doThisNow:
-      "Describe that task below. Then search Product Hunt for similar tools. If nothing good exists under $20/month, you've found your micro-tool idea — and your first paying customer is you.",
+    stepTitle: "Identify your micro-tool gap",
+    instruction:
+      "Think about a task you do weekly that involves a spreadsheet or manual process. Describe it below. Then search Product Hunt for similar tools. If nothing good exists under $20/month, that's your idea.",
     template:
-      "The repetitive task: ________\nHow often I do it: ________\nCurrent tool: ________ (spreadsheet / manual / nothing)\nTime it takes: ________ minutes each time\n\nProduct Hunt search: \"________\"\nSimilar tools found:\n1. ________ → $________/mo → Missing: ________\n2. ________ → $________/mo → Missing: ________\n\nMy tool would:\n→ ________\n→ ________\n\nI'd pay $________/mo for this.\nOther people who'd want this: ________",
+      "The repetitive task: ________\nHow often: ________\nCurrent tool: ________ (spreadsheet / manual / nothing)\nTime per session: ________ min\n\nProduct Hunt search: \"________\"\nSimilar tools:\n1. ________ → $________/mo → Missing: ________\n2. ________ → $________/mo → Missing: ________\n\nMy tool would: ________\nI'd pay $________/mo for this.",
   },
   "steal-proven-business-ideas-smarter": {
-    firstStep:
-      "Go to IndieHackers.com/products or Product Hunt right now. Sort by revenue. Find one product making $5K+/month that you find interesting.",
-    doThisNow:
-      "Read their user reviews and feedback. Find 3 things people complain about. Your improved version fixes exactly those 3 things — that's your de-risked business idea.",
+    stepTitle: "Find a proven product to improve",
+    instruction:
+      "Go to Indie Hackers or Product Hunt. Find one product making $5K+/month. Read their user reviews. List 3 complaints below — your improved version fixes exactly those.",
     template:
-      "Product found: ________\nRevenue: $________/month\nWhat it does: ________\n\nUser complaints:\n1. ________ (source: ________)\n2. ________ (source: ________)\n3. ________ (source: ________)\n\nMy improved version:\nName idea: ________\nFixes complaint #1 by: ________\nFixes complaint #2 by: ________\nFixes complaint #3 by: ________\n\nTarget customer: ________\nPrice point: $________/mo",
+      "Product: ________\nRevenue: $________/month\nWhat it does: ________\n\nComplaints:\n1. ________ (source: ________)\n2. ________ (source: ________)\n3. ________ (source: ________)\n\nMy improved version:\nFixes #1 by: ________\nFixes #2 by: ________\nFixes #3 by: ________\n\nTarget customer: ________\nPrice: $________/mo",
   },
   "turn-skills-into-digital-product": {
-    firstStep:
-      "Think about the last 3 times someone asked you for help or advice. What topics keep coming up? Those are your monetisable skills.",
-    doThisNow:
-      "Fill in the template below. By the end, you'll have a product outline for a digital guide based on skills people already value you for.",
+    stepTitle: "Outline your first digital product",
+    instruction:
+      "Think about the last 3 times someone asked you for help. Those are your monetisable skills. Pick the easiest to explain in writing and fill in the product outline below.",
     template:
-      "3 things people ask me about:\n1. ________\n2. ________\n3. ________\n\nEasiest to explain in writing: #________\n\nProduct outline:\nTitle: \"How to ________\"\nFormat: ________ (PDF guide / video course / template pack)\nTarget buyer: ________\n\nChapter/section breakdown:\n1. ________\n2. ________\n3. ________\n4. ________\n5. ________\n\nPrice: $________\nSell on: ________ (Gumroad / Lemonsqueezy / own site)",
+      "3 things people ask me about:\n1. ________\n2. ________\n3. ________\n\nEasiest to explain: #________\n\nTitle: \"How to ________\"\nFormat: ________ (PDF / video / template pack)\nTarget buyer: ________\n\nSections:\n1. ________\n2. ________\n3. ________\n4. ________\n5. ________\n\nPrice: $________\nSell on: ________",
   },
   "hidden-money-in-your-industry": {
-    firstStep:
-      "Think about your current or most recent industry. Focus on the inefficiencies — things companies waste money on because they don't know better.",
-    doThisNow:
-      "List 3 specific inefficiencies below. For each one, describe how you'd fix it as a service. Price it at 10% of the money you'd save them — that's your fee.",
+    stepTitle: "Map 3 industry inefficiencies",
+    instruction:
+      "Think about your industry. What do companies waste money on because they don't know better? List 3 inefficiencies below. For each, describe how you'd fix it as a service. Price at 10% of savings.",
     template:
-      "My industry: ________\n\nInefficiency #1:\nWhat they waste money on: ________\nHow much it costs them: ~$________/year\nHow I'd fix it: ________\nMy fee (10% of savings): $________\n\nInefficiency #2:\nWhat they waste money on: ________\nHow much it costs them: ~$________/year\nHow I'd fix it: ________\nMy fee (10% of savings): $________\n\nInefficiency #3:\nWhat they waste money on: ________\nHow much it costs them: ~$________/year\nHow I'd fix it: ________\nMy fee (10% of savings): $________\n\nStrongest opportunity: #________\nFirst client to pitch: ________",
+      "Industry: ________\n\n1. Waste: ________\n   Cost: ~$________/year\n   Fix: ________\n   My fee: $________\n\n2. Waste: ________\n   Cost: ~$________/year\n   Fix: ________\n   My fee: $________\n\n3. Waste: ________\n   Cost: ~$________/year\n   Fix: ________\n   My fee: $________\n\nBest opportunity: #________\nFirst client to pitch: ________",
+  },
+};
+
+/** Step 2 mocks — used as fallback for "generate next step" without AI */
+const step2Map: Record<string, StartThisOutput> = {
+  "cold-outreach-message-generator": {
+    stepTitle: "Send the message and track the response",
+    instruction:
+      "Copy the message you wrote in Step 1. Open LinkedIn and send it right now. Then set a reminder for 3 days from today to follow up if they don't reply. Fill in the tracker below.",
+    template:
+      "Message sent to: ________\nDate sent: ________\nPlatform: ________\n\nFollow-up reminder set for: ________\n\nFollow-up message (if no reply):\nHi ________, just bumping this in case it got buried. I was genuinely curious about ________. No worries if you're swamped.\n\nResult after 1 week:\n→ Reply received: YES / NO\n→ Outcome: ________\n→ Lesson: ________",
+  },
+  "validate-before-you-waste-time": {
+    stepTitle: "Talk to 3 potential customers",
+    instruction:
+      "Based on your validation results from Step 1, find 3 real people who have the problem your idea solves. DM them on Reddit, Twitter, or LinkedIn. Ask them the questions below — don't pitch, just listen.",
+    template:
+      "Person 1: ________\nWhere I found them: ________\nQuestion asked: \"How do you currently handle ________?\"\nTheir answer: ________\nWould they pay for a solution: YES / NO\n\nPerson 2: ________\nWhere I found them: ________\nTheir answer: ________\nWould they pay: YES / NO\n\nPerson 3: ________\nTheir answer: ________\nWould they pay: YES / NO\n\nConclusion: ________/3 would pay\nNext action: ________",
   },
 };
 
@@ -223,19 +229,30 @@ const defaultValidation: IdeaValidation = {
     "Multiple viable paths including freemium, affiliate, and premium tiers. Start with the simplest model and iterate.",
 };
 
-const defaultStartThis: StartThisOutput = {
-  firstStep:
-    "Open a new document or note. You're going to capture real demand signals for this idea in under 10 minutes.",
-  doThisNow:
-    "Search Reddit and Twitter for people complaining about this exact problem. Write down the 3 most common complaints that don't have good existing solutions.",
+const defaultStep1: StartThisOutput = {
+  stepTitle: "Capture demand signals",
+  instruction:
+    "Open a new document. Search Reddit and Twitter for people complaining about this exact problem. Write down the 3 most common complaints that don't have good existing solutions.",
   template:
     "Idea: ________\n\nComplaint #1: ________\nSource: ________\n\nComplaint #2: ________\nSource: ________\n\nComplaint #3: ________\nSource: ________\n\nVerdict: ________ (real demand / weak signal / no demand)",
+};
+
+const defaultStep2: StartThisOutput = {
+  stepTitle: "Reach out to 3 potential users",
+  instruction:
+    "Based on the complaints you found in Step 1, find 3 real people who have this problem. Send each a short message asking how they currently solve it. Don't pitch — just listen and take notes.",
+  template:
+    "Person 1: ________\nPlatform: ________\nMessage sent: \"How do you currently handle ________?\"\nTheir response: ________\n\nPerson 2: ________\nTheir response: ________\n\nPerson 3: ________\nTheir response: ________\n\nPattern I noticed: ________\nNext action: ________",
 };
 
 export function getValidation(id: string): IdeaValidation {
   return validationMap[id] ?? defaultValidation;
 }
 
-export function getStartThis(id: string): StartThisOutput {
-  return startThisMap[id] ?? defaultStartThis;
+export function getStartThis(id: string, stepNumber: number = 1): StartThisOutput {
+  if (stepNumber === 1) {
+    return step1Map[id] ?? defaultStep1;
+  }
+  // For step 2+, return step2 mock if available, otherwise generic
+  return step2Map[id] ?? defaultStep2;
 }

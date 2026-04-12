@@ -17,7 +17,13 @@ export default function IdeaDetailPage() {
 
   const [validation, setValidation] = useState<IdeaValidation | null>(null);
   const [validationError, setValidationError] = useState(false);
-  const [output, setOutput] = useState<StartThisOutput | null>(null);
+
+  // Step progression state
+  const [currentStep, setCurrentStep] = useState<StartThisOutput | null>(null);
+  const [stepNumber, setStepNumber] = useState(0);
+  const [previousSteps, setPreviousSteps] = useState<
+    Array<{ stepTitle: string; instruction: string }>
+  >([]);
   const [startLoading, setStartLoading] = useState(false);
   const [startError, setStartError] = useState(false);
   const [nextStepLoading, setNextStepLoading] = useState(false);
@@ -45,12 +51,19 @@ export default function IdeaDetailPage() {
     fetchValidation();
   }, [params.id, fetchValidation]);
 
-  const fetchAction = async () => {
+  const fetchAction = async (
+    targetStepNumber: number,
+    history: Array<{ stepTitle: string; instruction: string }>
+  ): Promise<StartThisOutput | null> => {
     try {
       const res = await fetch("/api/start-this", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: params.id }),
+        body: JSON.stringify({
+          id: params.id,
+          stepNumber: targetStepNumber,
+          previousSteps: history,
+        }),
       });
       if (!res.ok) throw new Error("Failed");
       return await res.json();
@@ -62,10 +75,11 @@ export default function IdeaDetailPage() {
   const handleStart = async () => {
     setStartLoading(true);
     setStartError(false);
-    const data = await fetchAction();
+    const data = await fetchAction(1, []);
     if (data) {
-      setOutput(data);
-      // Scroll to output after render
+      setCurrentStep(data);
+      setStepNumber(1);
+      setPreviousSteps([]);
       setTimeout(() => {
         outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 100);
@@ -76,10 +90,21 @@ export default function IdeaDetailPage() {
   };
 
   const handleNextStep = async () => {
+    if (!currentStep) return;
     setNextStepLoading(true);
-    const data = await fetchAction();
+
+    // Add current step to history
+    const updatedHistory = [
+      ...previousSteps,
+      { stepTitle: currentStep.stepTitle, instruction: currentStep.instruction },
+    ];
+    const nextNum = stepNumber + 1;
+
+    const data = await fetchAction(nextNum, updatedHistory);
     if (data) {
-      setOutput(data);
+      setPreviousSteps(updatedHistory);
+      setCurrentStep(data);
+      setStepNumber(nextNum);
       setTimeout(() => {
         outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 100);
@@ -134,7 +159,7 @@ export default function IdeaDetailPage() {
         <ValidationSprint validation={validation} />
       )}
 
-      {!output && !startError && (
+      {!currentStep && !startError && (
         <PrimaryActionPanel
           onStart={handleStart}
           loading={startLoading}
@@ -142,7 +167,7 @@ export default function IdeaDetailPage() {
         />
       )}
 
-      {startError && !output && (
+      {startError && !currentStep && (
         <div className="mt-6 rounded-xl bg-white p-4 text-center shadow-[0_1px_2px_rgba(0,0,0,0.03),0_0_0_1px_rgba(0,0,0,0.04)]">
           <p className="text-[13px] text-zinc-500">
             Something went wrong generating your action.
@@ -157,9 +182,10 @@ export default function IdeaDetailPage() {
       )}
 
       <div ref={outputRef}>
-        {output && (
+        {currentStep && (
           <OutputPanel
-            data={output}
+            data={currentStep}
+            stepNumber={stepNumber}
             onNextStep={handleNextStep}
             nextStepLoading={nextStepLoading}
             onTryAnother={handleTryAnother}

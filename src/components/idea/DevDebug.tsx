@@ -10,6 +10,7 @@ import {
   resetMetrics,
   IdeaMetrics,
 } from "@/lib/metrics";
+import { loadStats, resetStats } from "@/lib/sessionStats";
 import { FeedbackState } from "./SessionRecap";
 import { OutcomeState } from "./OutcomeCard";
 
@@ -37,6 +38,7 @@ export default function DevDebug({
   const [open, setOpen] = useState(false);
   const [resetDone, setResetDone] = useState(false);
   const [metricsResetDone, setMetricsResetDone] = useState(false);
+  const [statsResetDone, setStatsResetDone] = useState(false);
   const [showAllMetrics, setShowAllMetrics] = useState(false);
 
   if (process.env.NODE_ENV !== "development") return null;
@@ -53,11 +55,18 @@ export default function DevDebug({
     setTimeout(() => setMetricsResetDone(false), 1500);
   };
 
+  const handleResetStats = () => {
+    resetStats();
+    setStatsResetDone(true);
+    setTimeout(() => setStatsResetDone(false), 1500);
+  };
+
   // Read metrics live when panel is open
   const ideaMetrics: IdeaMetrics | null = open
     ? getMetricsForIdea(ideaId)
     : null;
   const allIdeas = open && showAllMetrics ? getTopIdeas("clicks") : [];
+  const sessionStats = open ? loadStats() : null;
 
   return (
     <div className="mt-8 mb-4">
@@ -169,8 +178,39 @@ export default function DevDebug({
             </div>
           )}
 
+          {/* Session stats */}
+          {sessionStats && (
+            <div className="mt-2 rounded-lg bg-zinc-900 p-3">
+              <p className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">
+                Session stats
+              </p>
+              <div className="mt-1.5 grid grid-cols-3 gap-2">
+                <div className="text-center">
+                  <p className="font-mono text-[14px] font-semibold text-zinc-300">
+                    {sessionStats.totalSessions}
+                  </p>
+                  <p className="font-mono text-[9px] text-zinc-500">sessions</p>
+                </div>
+                <div className="text-center">
+                  <p className="font-mono text-[14px] font-semibold text-zinc-300">
+                    {sessionStats.totalOutputs}
+                  </p>
+                  <p className="font-mono text-[9px] text-zinc-500">outputs</p>
+                </div>
+                <div className="text-center">
+                  <p className="font-mono text-[14px] font-semibold text-zinc-300">
+                    {sessionStats.lastSessionDate
+                      ? new Date(sessionStats.lastSessionDate).toLocaleDateString()
+                      : "—"}
+                  </p>
+                  <p className="font-mono text-[9px] text-zinc-500">last</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Action buttons */}
-          <div className="mt-2 flex gap-2">
+          <div className="mt-2 flex flex-wrap gap-2">
             <button
               onClick={handleResetOnboarding}
               className="rounded bg-zinc-800 px-2.5 py-1 font-mono text-[10px] text-zinc-400 transition-colors hover:text-zinc-200"
@@ -182,6 +222,12 @@ export default function DevDebug({
               className="rounded bg-zinc-800 px-2.5 py-1 font-mono text-[10px] text-zinc-400 transition-colors hover:text-zinc-200"
             >
               {metricsResetDone ? "✓ metrics reset" : "reset metrics"}
+            </button>
+            <button
+              onClick={handleResetStats}
+              className="rounded bg-zinc-800 px-2.5 py-1 font-mono text-[10px] text-zinc-400 transition-colors hover:text-zinc-200"
+            >
+              {statsResetDone ? "✓ stats reset" : "reset stats"}
             </button>
           </div>
         </>

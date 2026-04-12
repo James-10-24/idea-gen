@@ -26,6 +26,7 @@ import { buildFilledTemplate } from "@/components/idea/EditableTemplate";
 import { needsCommitment, buildCommitmentStep } from "@/lib/commitment";
 import { shouldFinalize, buildFinalizationStep } from "@/lib/finalization";
 import { getSuggestions } from "@/lib/suggestions";
+import { recordFinalization } from "@/lib/sessionStats";
 import WhatsNext from "@/components/idea/WhatsNext";
 import FirstStepToast from "@/components/idea/FirstStepToast";
 import ResumeBanner from "@/components/idea/ResumeBanner";
@@ -295,10 +296,11 @@ export default function IdeaDetailPage() {
       return;
     }
 
-    // If we just completed the final step, mark as finalized
+    // If we just completed the final step, mark as finalized + record stats
     if (isFinalStep) {
       setIsFinalStep(false);
       setHasFinalized(true);
+      recordFinalization();
     }
 
     // --- Normal flow: call AI for next step ---

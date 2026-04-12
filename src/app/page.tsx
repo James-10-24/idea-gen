@@ -2,6 +2,7 @@ import { mockIdeas } from "@/lib/mockIdeas";
 import FeedList from "@/components/feed/FeedList";
 import OnboardingCard from "@/components/feed/OnboardingCard";
 import ContinueCard from "@/components/feed/ContinueCard";
+import ReturnCard from "@/components/feed/ReturnCard";
 
 export default function HomePage() {
   return (
@@ -14,6 +15,7 @@ export default function HomePage() {
           Turn free time into ideas you can act on.
         </p>
       </div>
+      <ReturnCard />
       <ContinueCard />
       <OnboardingCard />
       <FeedList ideas={mockIdeas} />

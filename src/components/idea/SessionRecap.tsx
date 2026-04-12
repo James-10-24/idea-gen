@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { OutcomeState, formatOutcomeForCopy } from "./OutcomeCard";
 
 // ---------------------------------------------------------------------------
 // Feedback types
@@ -58,6 +59,7 @@ interface SessionRecapProps {
   artifactsCount: number;
   feedback: FeedbackState;
   onFeedbackChange: (feedback: FeedbackState) => void;
+  realOutcome?: OutcomeState;
 }
 
 // ---------------------------------------------------------------------------
@@ -72,6 +74,7 @@ export default function SessionRecap({
   artifactsCount,
   feedback,
   onFeedbackChange,
+  realOutcome,
 }: SessionRecapProps) {
   const [copied, setCopied] = useState(false);
 
@@ -125,6 +128,13 @@ export default function SessionRecap({
     ];
     if (feedback.freeText.trim()) {
       lines.push(`  Note: ${feedback.freeText.trim()}`);
+    }
+    if (realOutcome) {
+      const outcomeText = formatOutcomeForCopy(realOutcome);
+      if (outcomeText) {
+        lines.push("");
+        lines.push(outcomeText);
+      }
     }
     return lines.join("\n");
   };

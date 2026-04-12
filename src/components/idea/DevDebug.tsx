@@ -11,6 +11,7 @@ import {
   IdeaMetrics,
 } from "@/lib/metrics";
 import { FeedbackState } from "./SessionRecap";
+import { OutcomeState } from "./OutcomeCard";
 
 interface DevDebugProps {
   ideaId: string;
@@ -20,6 +21,7 @@ interface DevDebugProps {
   currentOutcome: StepOutcome | null;
   feedback: FeedbackState;
   priority: PriorityResult | null;
+  realOutcome: OutcomeState;
 }
 
 export default function DevDebug({
@@ -30,6 +32,7 @@ export default function DevDebug({
   currentOutcome,
   feedback,
   priority,
+  realOutcome,
 }: DevDebugProps) {
   const [open, setOpen] = useState(false);
   const [resetDone, setResetDone] = useState(false);
@@ -79,6 +82,13 @@ export default function DevDebug({
                 priority: priority
                   ? { rating: priority.rating, explanation: priority.explanation }
                   : null,
+                realOutcome: {
+                  type: realOutcome.type,
+                  amount: realOutcome.amount || null,
+                  note: realOutcome.note
+                    ? `"${realOutcome.note.slice(0, 40)}..."`
+                    : null,
+                },
                 feedback: {
                   usefulness: feedback.usefulness,
                   hardest: feedback.hardest,

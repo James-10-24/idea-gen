@@ -26,6 +26,7 @@ import { buildFilledTemplate } from "@/components/idea/EditableTemplate";
 import { needsCommitment, buildCommitmentStep } from "@/lib/commitment";
 import FirstStepToast from "@/components/idea/FirstStepToast";
 import ResumeBanner from "@/components/idea/ResumeBanner";
+import OutcomeCard, { OutcomeState, emptyOutcome } from "@/components/idea/OutcomeCard";
 
 interface CompletedStep {
   stepTitle: string;
@@ -64,6 +65,7 @@ export default function IdeaDetailPage() {
   const [startError, setStartError] = useState(false);
   const [nextStepLoading, setNextStepLoading] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackState>(emptyFeedback);
+  const [realOutcome, setRealOutcome] = useState<OutcomeState>(emptyOutcome);
   const [hydrated, setHydrated] = useState(false);
   const [showFirstToast, setShowFirstToast] = useState(false);
   const [isRestored, setIsRestored] = useState(false);
@@ -185,6 +187,7 @@ export default function IdeaDetailPage() {
       setIsCommitmentStep(false);
       setLastSelectedChoice(null);
       setFeedback(emptyFeedback);
+      setRealOutcome(emptyOutcome);
       // Show first-step toast once per session
       if (!hasShownToast.current) {
         hasShownToast.current = true;
@@ -308,6 +311,7 @@ export default function IdeaDetailPage() {
     setIsCommitmentStep(false);
     setLastSelectedChoice(null);
     setFeedback(emptyFeedback);
+    setRealOutcome(emptyOutcome);
     setIsRestored(false);
     setRestoredSavedAt(null);
     clearSavedSession();
@@ -350,6 +354,7 @@ export default function IdeaDetailPage() {
   const totalSteps = stepNumber;
   const doneCount = completedSteps.filter((s) => s.done).length;
   const showRecap = completedSteps.length >= 2 || artifacts.length >= 2;
+  const showOutcome = completedSteps.length >= 3 || artifacts.length >= 2;
   const priority = validation ? computePriority(validation) : null;
 
   // Not found state
@@ -494,7 +499,12 @@ export default function IdeaDetailPage() {
           artifactsCount={artifacts.length}
           feedback={feedback}
           onFeedbackChange={setFeedback}
+          realOutcome={realOutcome}
         />
+      )}
+
+      {showOutcome && (
+        <OutcomeCard outcome={realOutcome} onChange={setRealOutcome} />
       )}
 
       {currentStep && (
@@ -506,6 +516,7 @@ export default function IdeaDetailPage() {
           currentOutcome={currentOutcome}
           feedback={feedback}
           priority={priority}
+          realOutcome={realOutcome}
         />
       )}
 

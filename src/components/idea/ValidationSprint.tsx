@@ -7,11 +7,11 @@ interface ValidationSprintProps {
 
 export default function ValidationSprint({ validation }: ValidationSprintProps) {
   return (
-    <div className="mt-5">
-      <h2 className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-zinc-300">
+    <div className="mt-4">
+      <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-zinc-300">
         Validation Sprint
       </h2>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5">
         <ValidationSection
           label="Demand"
           icon="📈"

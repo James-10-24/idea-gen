@@ -8,7 +8,7 @@ import { getValidation, getStartThis } from "./mockIdeaDetails";
 
 const API_KEY = process.env.OPENAI_API_KEY;
 const MODEL = "gpt-4o-mini";
-const MAX_TOKENS = 600;
+const MAX_TOKENS = 500;
 const TIMEOUT_MS = 15_000;
 
 function getClient(): OpenAI | null {
@@ -26,69 +26,105 @@ function isAIEnabled(): boolean {
 
 /** Trim a string to max length, breaking at sentence boundary when possible. */
 function trimToLength(text: string, max: number): string {
-  const cleaned = text.replace(/\n+/g, " ").trim();
+  const cleaned = text.replace(/\n{3,}/g, "\n\n").trim();
   if (cleaned.length <= max) return cleaned;
   const truncated = cleaned.slice(0, max);
   const lastPeriod = truncated.lastIndexOf(".");
-  if (lastPeriod > max * 0.6) return truncated.slice(0, lastPeriod + 1);
+  if (lastPeriod > max * 0.5) return truncated.slice(0, lastPeriod + 1);
   return truncated + "…";
 }
 
 /** Strip markdown formatting that would clutter the UI. */
 function stripMarkdown(text: string): string {
   return text
-    .replace(/\*\*(.*?)\*\*/g, "$1") // bold
-    .replace(/\*(.*?)\*/g, "$1") // italic
-    .replace(/^#+\s*/gm, "") // headings
-    .replace(/^[-*]\s+/gm, "") // bullet prefixes
-    .replace(/`(.*?)`/g, "$1") // inline code
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/\*(.*?)\*/g, "$1")
+    .replace(/^#+\s*/gm, "")
+    .replace(/^[-*]\s+/gm, "")
+    .replace(/`(.*?)`/g, "$1")
     .trim();
 }
 
 /** Clean and constrain AI output for display. */
-function sanitise(text: string, maxLen = 300): string {
+function sanitise(text: string, maxLen = 180): string {
   return trimToLength(stripMarkdown(text), maxLen);
 }
 
+/** Trim template to max N lines. */
+function trimTemplate(text: string, maxLines = 8): string {
+  const cleaned = stripMarkdown(text);
+  const lines = cleaned.split("\n").filter((l) => l.trim() !== "");
+  if (lines.length <= maxLines) return lines.join("\n");
+  return lines.slice(0, maxLines).join("\n");
+}
+
 // ---------------------------------------------------------------------------
-// Prompts
+// Prompts — Validation
 // ---------------------------------------------------------------------------
 
-const VALIDATION_SYSTEM = `You are a pragmatic startup advisor who has built and sold companies. Be concise, realistic, and slightly critical. Avoid hype. Write like a sharp operator texting a friend, not a blog post. No bullet points, no markdown. Plain sentences only.`;
+const VALIDATION_SYSTEM = `You are a pragmatic startup advisor who has built and sold companies. Be brutally concise. No hype. No filler. Write like a sharp operator texting a friend. Plain sentences only — no markdown, no bullets, no bold.
+
+CRITICAL: Each section must be exactly 1-2 short sentences. Max 140 characters per section. If you go longer, the UI breaks.`;
 
 function validationPrompt(idea: IdeaFeedItem): string {
-  return `Analyze this idea for someone considering it as a side hustle or small product:
+  return `Analyze this idea:
 
 Title: "${idea.title}"
 Description: "${idea.subtext}"
 
-Return your analysis in EXACTLY this format (no other text, no labels repeated, no markdown):
+Return in EXACTLY this format:
 
-DEMAND: <1-2 sentences on whether real demand exists. Cite specific signals like search trends, community activity, or market behaviour. Be honest if demand is uncertain.>
+DEMAND: <1-2 short sentences, max 140 chars>
+COMPETITION: <1-2 short sentences, max 140 chars>
+MONETISATION: <1-2 short sentences, max 140 chars>
 
-COMPETITION: <1-2 sentences on existing players and where the gap is. Name real competitors or categories if relevant. Be specific about what's saturated vs. what's open.>
+Here are examples of GOOD output at the right length and tone:
 
-MONETISATION: <1-2 sentences on realistic revenue paths. Include rough numbers or ranges. Be practical, not optimistic.>
+Example 1 (cold outreach tool):
+DEMAND: Very high — freelancers and founders search "cold email template" constantly. The need is real and recurring.
+COMPETITION: Crowded in email tools, but thin for instant mobile generators that give you one message you can copy and send.
+MONETISATION: Freemium with daily limits, premium templates. $3–10/month subscription potential from regular users.
+
+Example 2 (subscription audit):
+DEMAND: Massive — average person wastes $200+/month on forgotten subscriptions. Personal finance content around this crushes.
+COMPETITION: Truebill/Rocket Money exist but require bank linking. A quick self-audit with no login is a different play.
+MONETISATION: Affiliate to cancellation services and budgeting apps. $1–5 per referral, strong conversion.
+
+Example 3 (property ROI):
+DEMAND: Strong — new investors constantly search for quick ROI checks. "Property ROI calculator" trends upward yearly.
+COMPETITION: Most tools are spreadsheet-based or desktop-heavy. A fast, opinionated mobile tool has clear whitespace.
+MONETISATION: Premium tiers, affiliate to mortgage brokers. $5–15 per conversion is realistic.
 
 Rules:
-- No fluff, no filler phrases like "this could be great" or "there's potential"
-- Sound like a real operator who has done this before
+- Match the tone and length of the examples above
+- Be specific — name real competitors, cite real behaviours
 - If the idea is weak, say so honestly
-- Each section MUST be 1-2 sentences only`;
+- No fluff phrases like "there's potential" or "this could work"
+- Each section MUST be 1-2 sentences, max 140 characters`;
 }
 
-const START_THIS_SYSTEM = `You are a highly practical execution coach guiding someone step-by-step through turning an idea into reality. Each step you generate must build logically on the previous steps. You give fill-in-the-blank worksheets — never abstract advice. Every output must be something the user can DO immediately. No markdown formatting, no bullet dashes or asterisks. Plain text only.`;
+// ---------------------------------------------------------------------------
+// Prompts — Start This
+// ---------------------------------------------------------------------------
+
+const START_THIS_SYSTEM = `You are a practical execution coach. You give fill-in-the-blank worksheets — never advice. Every output must be a specific ACTION the user does right now, not a thing to think about. No markdown. Plain text only.
+
+CRITICAL CONSTRAINTS:
+- TEMPLATE must be max 6-8 lines
+- Each line must be short (under 60 chars)
+- Use ________ (8 underscores) for blanks
+- The step must feel like a smart shortcut, not busywork`;
 
 function outcomeDirective(outcome?: StepOutcome): string {
   switch (outcome) {
     case "done":
-      return "The user completed the previous step fully. Generate the next logical step that builds on their progress and pushes forward.";
+      return "The user completed the previous step. Generate the next logical step that pushes forward.";
     case "partly":
-      return "The user only partly finished the previous step. Generate a step that helps them complete the unfinished part in a simpler, more focused way. Break it down further. Do not skip ahead.";
+      return "The user only partly finished. Help them complete it in a simpler way. Break it down further.";
     case "stuck":
-      return "The user got stuck on the previous step. Generate a smaller, easier unblock step — something they can definitely do in 5 minutes that removes the blocker. Do not repeat the same step. Find an alternative angle or a prerequisite they may have missed.";
+      return "The user got stuck. Generate a smaller, easier unblock step — something doable in 5 minutes.";
     case "useful":
-      return "The user got a useful result from the previous step and has momentum. Generate the next step that capitalises on that energy — push them further and faster toward a concrete outcome.";
+      return "The user got a useful result. Capitalise on momentum — push them further and faster.";
     default:
       return "Generate the next logical step.";
   }
@@ -100,35 +136,59 @@ function startThisPrompt(idea: IdeaFeedItem, context?: StepContext): string {
   let previousContext = "";
   if (context?.previousSteps && context.previousSteps.length > 0) {
     const stepsSummary = context.previousSteps
-      .map((s, i) => `Step ${i + 1} — "${s.stepTitle}": ${s.instruction}`)
+      .map((s, i) => `Step ${i + 1}: "${s.stepTitle}"`)
       .join("\n");
     const directive = outcomeDirective(context.lastOutcome);
-    previousContext = `\nThe user has worked through these steps:\n${stepsSummary}\n\n${directive}\n\nYou MUST generate Step ${stepNum}. Do NOT repeat any previous step. Move toward a concrete outcome (a product, a sale, a launched asset, etc.).\n`;
+    previousContext = `\nPrevious steps completed:\n${stepsSummary}\n\n${directive}\n\nGenerate Step ${stepNum}. Do NOT repeat previous steps.\n`;
   }
 
-  return `Given this idea:
-
-Title: "${idea.title}"
-Description: "${idea.subtext}"
+  return `Idea: "${idea.title}" — ${idea.subtext}
 ${previousContext}
-Generate Step ${stepNum} of a guided execution journey. This step must be completable in under 10 minutes.
+Generate Step ${stepNum}. Must be completable in under 10 minutes.
 
-Return in EXACTLY this format (no other text, no markdown):
+Return in EXACTLY this format:
 
-STEP_TITLE: <A short action-oriented title for this step, 3-8 words, like "Write your landing page copy" or "Send 3 cold DMs">
+STEP_TITLE: <3-7 word action title>
+INSTRUCTION: <2-3 sentences. Specific commands — name tools, sites, actions. No "consider" or "think about".>
+TEMPLATE: <Fill-in-the-blank worksheet. MAX 6-8 lines. Short lines. Use ________ for blanks.>
 
-INSTRUCTION: <2-4 sentences. Tell the user exactly what to do right now. Be specific — name websites, apps, or tools. Reference the template below. Every sentence must be a command, not advice.>
+GOOD examples at the right quality:
 
-TEMPLATE: <A fill-in-the-blank worksheet using ________ for blanks. Include clear labels. At least 4 blanks. Use newlines to separate sections. Must feel like a real worksheet.>
+Example 1 (validate idea):
+STEP_TITLE: Run a 3-question validation check
+INSTRUCTION: Write your idea in one sentence. Search Google Trends, Reddit, and Twitter for each answer below. 3 yeses = pursue. Fewer = pivot.
+TEMPLATE:
+Idea: ________
+1. Search volume growing? → YES / NO
+2. Real complaints on Reddit? → YES / NO
+3. People paying for solutions? → YES / NO
+Score: ________/3
+Verdict: ________ (pursue / pivot / kill)
+
+Example 2 (cold outreach):
+STEP_TITLE: Write one personalised outreach message
+INSTRUCTION: Open LinkedIn. Find one person you want to reach. Read their last 3 posts. Fill in the template using something specific they said. No pitch — ask one genuine question.
+TEMPLATE:
+To: ________
+Their recent post about: ________
+Message: Hi ________, I saw your post about ________. Quick question — ________?
+Why this works: references their content, zero pitch.
+
+Example 3 (subscription audit):
+STEP_TITLE: Audit your subscriptions
+INSTRUCTION: Open your email. Search "subscription confirmation" and "recurring payment". List every active subscription. Cancel at least one before closing this page.
+TEMPLATE:
+1. ________ → $________/mo → Last used: ________
+2. ________ → $________/mo → Last used: ________
+3. ________ → $________/mo → Last used: ________
+Cancel now: ________ (saves $________/mo)
 
 Rules:
-- STEP_TITLE must be a concrete action, not a vague concept
-- INSTRUCTION must tell them exactly where to go and what to do — no "think about" or "consider"
-- TEMPLATE must use ________ (8 underscores) for every blank
-- Every step must produce a tangible artifact (a message, a list, a document, a post, a calculation)
-- Do NOT repeat anything from previous steps
-- Each step should move closer to a real outcome: revenue, a launched product, a real conversation with a customer
-- Write for someone who has never done this before`;
+- Step must be SPECIFIC to this idea — not generic
+- Must feel like a smart shortcut, not busywork
+- Must produce a tangible artifact (a message, list, document, calculation)
+- Template MUST be max 6-8 lines, short and scannable
+- No "create a survey" or "do some research" — be sharper than that`;
 }
 
 // ---------------------------------------------------------------------------
@@ -142,11 +202,10 @@ function parseValidation(raw: string): IdeaValidation | null {
 
   if (!demandMatch || !compMatch || !monMatch) return null;
 
-  const demand = sanitise(demandMatch[1]);
-  const competition = sanitise(compMatch[1]);
-  const monetisation = sanitise(monMatch[1]);
+  const demand = sanitise(demandMatch[1], 180);
+  const competition = sanitise(compMatch[1], 180);
+  const monetisation = sanitise(monMatch[1], 180);
 
-  // Basic quality check: each field should have substance
   if (demand.length < 20 || competition.length < 20 || monetisation.length < 20) {
     return null;
   }
@@ -161,12 +220,11 @@ function parseStartThis(raw: string): StartThisOutput | null {
 
   if (!titleMatch || !instrMatch || !templateMatch) return null;
 
-  const stepTitle = sanitise(titleMatch[1], 80);
-  const instruction = sanitise(instrMatch[1], 500);
-  // Templates keep newlines — only strip markdown, don't collapse lines
-  const template = stripMarkdown(templateMatch[1]).slice(0, 1200);
+  const stepTitle = sanitise(titleMatch[1], 60);
+  const instruction = sanitise(instrMatch[1], 300);
+  const template = trimTemplate(templateMatch[1], 8);
 
-  if (stepTitle.length < 5 || instruction.length < 15 || template.length < 30) {
+  if (stepTitle.length < 5 || instruction.length < 15 || template.length < 20) {
     return null;
   }
 
@@ -192,6 +250,7 @@ async function callLLM(
       {
         model: MODEL,
         max_tokens: MAX_TOKENS,
+        temperature: 0.7,
         messages: [
           { role: "system", content: system },
           { role: "user", content: userPrompt },
@@ -215,7 +274,6 @@ async function callLLM(
 export async function generateValidation(
   idea: IdeaFeedItem
 ): Promise<IdeaValidation> {
-  // Fallback to mock if AI is not configured
   if (!isAIEnabled()) {
     return getValidation(idea.id);
   }

@@ -44,6 +44,8 @@ const nextStepMessages = [
   "Adapting to your result…",
 ];
 
+const TEMPLATE_PREVIEW_LINES = 4;
+
 interface OutputPanelProps {
   data: StartThisOutput;
   stepNumber: number;
@@ -66,6 +68,12 @@ export default function OutputPanel({
   onTryAnother,
 }: OutputPanelProps) {
   const [msgIndex, setMsgIndex] = useState(0);
+  const [templateExpanded, setTemplateExpanded] = useState(false);
+
+  // Reset template collapse when step changes
+  useEffect(() => {
+    setTemplateExpanded(false);
+  }, [stepNumber]);
 
   useEffect(() => {
     if (!nextStepLoading) return;
@@ -77,6 +85,13 @@ export default function OutputPanel({
   }, [nextStepLoading]);
 
   const fullText = `STEP ${stepNumber}: ${data.stepTitle}\n\n${data.instruction}\n\nTEMPLATE:\n${data.template}`;
+
+  // Split template into lines for collapse
+  const templateLines = data.template.split("\n").filter((l) => l.trim() !== "");
+  const needsCollapse = templateLines.length > TEMPLATE_PREVIEW_LINES;
+  const visibleTemplate = templateExpanded
+    ? data.template
+    : templateLines.slice(0, TEMPLATE_PREVIEW_LINES).join("\n");
 
   return (
     <div className="mt-6 animate-in">
@@ -97,43 +112,19 @@ export default function OutputPanel({
         </h3>
       </div>
 
-      {/* Card */}
-      <div className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.04)]">
-        {/* Instruction */}
-        <div className="p-4">
-          <h4 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-zinc-300">
-            What to do
-          </h4>
-          <p className="mt-1.5 text-[14px] leading-[1.6] text-zinc-700">
-            {data.instruction}
-          </p>
-        </div>
-
-        <div className="mx-4 border-t border-zinc-100" />
-
-        {/* Template */}
-        <div className="p-4">
-          <div className="flex items-center justify-between">
-            <h4 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-zinc-300">
-              Fill this in
-            </h4>
-            <CopyButton text={data.template} label="Copy" />
-          </div>
-          <pre className="mt-2.5 whitespace-pre-wrap rounded-xl bg-zinc-50 p-3.5 font-sans text-[13px] leading-[1.7] text-zinc-600">
-            {data.template}
-          </pre>
-        </div>
-
-        {/* Footer: copy all */}
-        <div className="flex border-t border-zinc-100 px-4 py-3">
-          <CopyButton text={fullText} label="Copy all" />
-        </div>
+      {/* Instruction card */}
+      <div className="rounded-2xl bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.04)]">
+        <h4 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-zinc-300">
+          What to do
+        </h4>
+        <p className="mt-1.5 text-[14px] leading-[1.6] text-zinc-700">
+          {data.instruction}
+        </p>
       </div>
 
-      {/* Outcome check-in */}
+      {/* Outcome check-in + next step CTA — ABOVE template */}
       <OutcomeSelector selected={outcome} onSelect={onOutcomeSelect} />
 
-      {/* Generate next step — enabled once outcome is selected */}
       <button
         onClick={onNextStep}
         disabled={nextStepLoading || !outcome}
@@ -154,10 +145,38 @@ export default function OutputPanel({
         </p>
       )}
 
+      {/* Template — secondary, collapsible */}
+      <div className="mt-5 overflow-hidden rounded-2xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.04)]">
+        <div className="flex items-center justify-between px-4 pt-3.5 pb-0">
+          <h4 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-zinc-300">
+            Fill this in
+          </h4>
+          <CopyButton text={data.template} label="Copy" />
+        </div>
+        <div className="px-4 pt-2 pb-3.5">
+          <pre className="whitespace-pre-wrap rounded-xl bg-zinc-50 p-3 font-sans text-[13px] leading-[1.7] text-zinc-600">
+            {visibleTemplate}
+          </pre>
+          {needsCollapse && (
+            <button
+              onClick={() => setTemplateExpanded((v) => !v)}
+              className="mt-2 text-[12px] font-medium text-zinc-400 transition-colors hover:text-zinc-600"
+            >
+              {templateExpanded
+                ? "Show less"
+                : `Show full template (${templateLines.length} lines)`}
+            </button>
+          )}
+        </div>
+        <div className="flex border-t border-zinc-100 px-4 py-2.5">
+          <CopyButton text={fullText} label="Copy all" />
+        </div>
+      </div>
+
       {/* Try another idea */}
       <button
         onClick={onTryAnother}
-        className="mt-3 flex w-full items-center justify-center rounded-xl px-5 py-3 text-[13px] font-medium text-zinc-400 transition-all duration-150 hover:text-zinc-600 active:scale-[0.98]"
+        className="mt-4 flex w-full items-center justify-center rounded-xl px-5 py-3 text-[13px] font-medium text-zinc-400 transition-all duration-150 hover:text-zinc-600 active:scale-[0.98]"
       >
         ← Try another idea
       </button>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { StepOutcome } from "@/lib/types";
+import { extractKeyOutputs, formatOutputsForCopy, ExtractedOutput } from "@/lib/extractOutputs";
 
 export interface Artifact {
   stepNumber: number;
@@ -62,14 +63,20 @@ export default function BuildBoard({
   const [expanded, setExpanded] = useState(false);
 
   const recentArtifacts = artifacts.slice(-4);
-  const hasContent =
-    completedSteps.length > 0 || artifacts.length > 0;
+  const hasContent = completedSteps.length > 0 || artifacts.length > 0;
+  const keyOutputs: ExtractedOutput[] = extractKeyOutputs(artifacts);
 
   if (!hasContent) return null;
 
   const buildSummary = () => {
     let text = `PROJECT: ${ideaTitle}\n`;
     text += `GOAL: ${goal}\n\n`;
+
+    // Key outputs at the top
+    const outputsText = formatOutputsForCopy(keyOutputs);
+    if (outputsText) {
+      text += outputsText + "\n\n";
+    }
 
     if (completedSteps.length > 0) {
       text += `PROGRESS (${completedSteps.filter((s) => s.done).length}/${completedSteps.length} completed):\n`;
@@ -132,6 +139,30 @@ export default function BuildBoard({
       {/* Expanded content */}
       {expanded && (
         <div className="overflow-hidden rounded-b-xl bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03),0_0_0_1px_rgba(0,0,0,0.04)]">
+          {/* What you've created — key outputs */}
+          {keyOutputs.length > 0 && (
+            <div className="border-t border-zinc-100 px-4 py-3">
+              <h4 className="text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-300">
+                What you&apos;ve created
+              </h4>
+              <div className="mt-2 rounded-lg bg-emerald-50/50 px-3 py-2.5 ring-1 ring-inset ring-emerald-100">
+                <ul className="space-y-1.5">
+                  {keyOutputs.map((o, i) => (
+                    <li key={i} className="flex items-start gap-2 text-[12px]">
+                      <span className="mt-0.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-emerald-400" />
+                      <span>
+                        <span className="font-medium text-zinc-600">
+                          {o.label}:
+                        </span>{" "}
+                        <span className="text-zinc-800">{o.value}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
           {/* What you're building */}
           <div className="border-t border-zinc-100 px-4 py-3">
             <h4 className="text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-300">
@@ -161,9 +192,7 @@ export default function BuildBoard({
                     </span>
                     <span
                       className={`text-[12px] ${
-                        s.done
-                          ? "text-zinc-600"
-                          : "text-zinc-400"
+                        s.done ? "text-zinc-600" : "text-zinc-400"
                       }`}
                     >
                       {s.stepTitle}
@@ -182,10 +211,7 @@ export default function BuildBoard({
               </h4>
               <div className="mt-1.5 space-y-2">
                 {recentArtifacts.map((a, i) => (
-                  <div
-                    key={i}
-                    className="rounded-lg bg-zinc-50 px-3 py-2"
-                  >
+                  <div key={i} className="rounded-lg bg-zinc-50 px-3 py-2">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-medium text-zinc-600">
                         Step {a.stepNumber}: {a.stepTitle}
@@ -290,9 +316,16 @@ export default function BuildBoard({
         </div>
       )}
 
-      {/* Collapsed preview — just the bar above */}
+      {/* Collapsed preview */}
       {!expanded && (
         <div className="rounded-b-xl bg-white px-4 pb-3 shadow-[0_1px_2px_rgba(0,0,0,0.03),0_0_0_1px_rgba(0,0,0,0.04)]">
+          {/* Key output preview (1 line max) */}
+          {keyOutputs.length > 0 && (
+            <p className="mb-2 truncate text-[11px] text-zinc-400">
+              <span className="font-medium text-zinc-500">{keyOutputs[0].label}:</span>{" "}
+              {keyOutputs[0].value}
+            </p>
+          )}
           <div className="flex gap-1">
             {completedSteps.map((s, i) => (
               <div

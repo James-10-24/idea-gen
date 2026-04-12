@@ -9,6 +9,7 @@ import { encodeSession, decodeSession } from "@/lib/session";
 import { trackStart, trackStep2Plus } from "@/lib/metrics";
 import { saveSession, loadSavedSession, clearSavedSession } from "@/lib/savedSession";
 import { IdeaValidation, StartThisOutput, StepOutcome } from "@/lib/types";
+import { computePriority } from "@/lib/priority";
 import IdeaHero from "@/components/idea/IdeaHero";
 import ValidationSprint from "@/components/idea/ValidationSprint";
 import PrimaryActionPanel from "@/components/idea/PrimaryActionPanel";
@@ -296,6 +297,7 @@ export default function IdeaDetailPage() {
   const totalSteps = stepNumber;
   const doneCount = completedSteps.filter((s) => s.done).length;
   const showRecap = completedSteps.length >= 2 || artifacts.length >= 2;
+  const priority = validation ? computePriority(validation) : null;
 
   // Not found state
   if (!idea) {
@@ -448,6 +450,7 @@ export default function IdeaDetailPage() {
           artifactsCount={artifacts.length}
           currentOutcome={currentOutcome}
           feedback={feedback}
+          priority={priority}
         />
       )}
 

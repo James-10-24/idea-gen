@@ -5,16 +5,23 @@ import Link from "next/link";
 import { IdeaFeedItem } from "@/lib/types";
 import { moneyTagColor, effortTagColor } from "@/lib/utils";
 import { trackImpression, trackClick } from "@/lib/metrics";
+import { PriorityRating, priorityDot } from "@/lib/priority";
 import TagBadge from "./TagBadge";
 
 interface IdeaCardProps {
   idea: IdeaFeedItem;
   recommended?: boolean;
   preview?: string | null;
+  priority?: PriorityRating | null;
 }
 
-export default function IdeaCard({ idea, recommended, preview }: IdeaCardProps) {
-  // Track impression on mount (approximation — counts when rendered, not viewport entry)
+const priorityLabel: Record<PriorityRating, string> = {
+  promising: "Promising",
+  "worth-testing": "Worth testing",
+  weak: "Weak",
+};
+
+export default function IdeaCard({ idea, recommended, preview, priority }: IdeaCardProps) {
   useEffect(() => {
     trackImpression(idea.id);
   }, [idea.id]);
@@ -44,6 +51,12 @@ export default function IdeaCard({ idea, recommended, preview }: IdeaCardProps) 
       <div className="mt-2.5 flex items-center gap-1.5">
         <TagBadge label={idea.moneyTag} colorClass={moneyTagColor(idea.moneyTag)} />
         <TagBadge label={idea.effortTag} colorClass={effortTagColor(idea.effortTag)} />
+        {priority && (
+          <span className="flex items-center gap-1 pl-1 text-[11px] text-zinc-400">
+            <span className={`h-1.5 w-1.5 rounded-full ${priorityDot(priority)}`} />
+            {priorityLabel[priority]}
+          </span>
+        )}
       </div>
       {/* Chevron hint */}
       <svg

@@ -1,6 +1,6 @@
 import { IdeaFeedItem } from "@/lib/types";
 import { RECOMMENDED_IDEA_ID } from "@/lib/onboarding";
-import { getFeedPreview } from "@/lib/feedPreviews";
+import { getFeedPreview, getFeedPriority } from "@/lib/feedPreviews";
 import IdeaCard from "./IdeaCard";
 
 export default function FeedList({ ideas }: { ideas: IdeaFeedItem[] }) {
@@ -12,6 +12,7 @@ export default function FeedList({ ideas }: { ideas: IdeaFeedItem[] }) {
           idea={idea}
           recommended={idea.id === RECOMMENDED_IDEA_ID}
           preview={getFeedPreview(idea.id)}
+          priority={getFeedPriority(idea.id)}
         />
       ))}
     </div>

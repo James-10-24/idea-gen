@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { StepOutcome } from "@/lib/types";
+import { PriorityResult } from "@/lib/priority";
 import { resetOnboarding } from "@/lib/onboarding";
 import {
   getMetricsForIdea,
@@ -18,6 +19,7 @@ interface DevDebugProps {
   artifactsCount: number;
   currentOutcome: StepOutcome | null;
   feedback: FeedbackState;
+  priority: PriorityResult | null;
 }
 
 export default function DevDebug({
@@ -27,6 +29,7 @@ export default function DevDebug({
   artifactsCount,
   currentOutcome,
   feedback,
+  priority,
 }: DevDebugProps) {
   const [open, setOpen] = useState(false);
   const [resetDone, setResetDone] = useState(false);
@@ -73,6 +76,9 @@ export default function DevDebug({
                 completedCount,
                 artifactsCount,
                 currentOutcome,
+                priority: priority
+                  ? { rating: priority.rating, explanation: priority.explanation }
+                  : null,
                 feedback: {
                   usefulness: feedback.usefulness,
                   hardest: feedback.hardest,

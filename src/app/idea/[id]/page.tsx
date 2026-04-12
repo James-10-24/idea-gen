@@ -23,6 +23,7 @@ import SessionRecap, {
 import DevDebug from "@/components/idea/DevDebug";
 import WhatHappensNext from "@/components/idea/WhatHappensNext";
 import { buildFilledTemplate } from "@/components/idea/EditableTemplate";
+import { needsCommitment, buildCommitmentStep } from "@/lib/commitment";
 import FirstStepToast from "@/components/idea/FirstStepToast";
 import ResumeBanner from "@/components/idea/ResumeBanner";
 
@@ -57,6 +58,8 @@ export default function IdeaDetailPage() {
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [currentOutcome, setCurrentOutcome] = useState<StepOutcome | null>(null);
   const [templateValues, setTemplateValues] = useState<Record<number, string>>({});
+  const [isCommitmentStep, setIsCommitmentStep] = useState(false);
+  const [lastSelectedChoice, setLastSelectedChoice] = useState<string | null>(null);
   const [startLoading, setStartLoading] = useState(false);
   const [startError, setStartError] = useState(false);
   const [nextStepLoading, setNextStepLoading] = useState(false);
@@ -145,7 +148,8 @@ export default function IdeaDetailPage() {
   const fetchAction = async (
     targetStepNumber: number,
     history: Array<{ stepTitle: string; instruction: string }>,
-    lastOutcome?: StepOutcome | null
+    lastOutcome?: StepOutcome | null,
+    selectedChoice?: string | null
   ): Promise<StartThisOutput | null> => {
     try {
       const res = await fetch("/api/start-this", {
@@ -156,6 +160,7 @@ export default function IdeaDetailPage() {
           stepNumber: targetStepNumber,
           previousSteps: history,
           lastOutcome: lastOutcome ?? undefined,
+          selectedChoice: selectedChoice ?? undefined,
         }),
       });
       if (!res.ok) throw new Error("Failed");
@@ -177,6 +182,8 @@ export default function IdeaDetailPage() {
       setArtifacts([]);
       setCurrentOutcome(null);
       setTemplateValues({});
+      setIsCommitmentStep(false);
+      setLastSelectedChoice(null);
       setFeedback(emptyFeedback);
       // Show first-step toast once per session
       if (!hasShownToast.current) {
@@ -196,6 +203,9 @@ export default function IdeaDetailPage() {
     if (!currentStep) return;
     setNextStepLoading(true);
 
+    const filledTemplate = buildFilledTemplate(currentStep.template, templateValues);
+
+    // Archive current step
     const updatedCompleted: CompletedStep[] = [
       ...completedSteps,
       {
@@ -205,7 +215,6 @@ export default function IdeaDetailPage() {
         outcome: currentOutcome,
       },
     ];
-    const filledTemplate = buildFilledTemplate(currentStep.template, templateValues);
     const updatedArtifacts: Artifact[] = [
       ...artifacts,
       {
@@ -215,13 +224,49 @@ export default function IdeaDetailPage() {
         outcome: currentOutcome,
       },
     ];
+    const nextNum = stepNumber + 1;
+
+    // --- Commitment intercept ---
+    // If current step was a list step (not already a commitment step),
+    // inject a commitment step before calling the AI.
+    if (!isCommitmentStep && needsCommitment(currentStep.template)) {
+      const commitStep = buildCommitmentStep(currentStep.stepTitle, templateValues);
+      setCompletedSteps(updatedCompleted);
+      setArtifacts(updatedArtifacts);
+      setCurrentStep(commitStep);
+      setStepNumber(nextNum);
+      setCurrentOutcome(null);
+      setTemplateValues({});
+      setIsCommitmentStep(true);
+      setNextStepLoading(false);
+      setTimeout(() => {
+        outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+      return;
+    }
+
+    // --- Extract selection from commitment step ---
+    let choiceForNextStep: string | null = null;
+    if (isCommitmentStep) {
+      // The first filled value in the commitment template is the user's choice
+      const choice = templateValues[0]?.trim() || null;
+      choiceForNextStep = choice;
+      setLastSelectedChoice(choice);
+      setIsCommitmentStep(false);
+    }
+
+    // --- Normal flow: call AI for next step ---
     const historyForAPI = updatedCompleted.map((s) => ({
       stepTitle: s.stepTitle,
       instruction: s.instruction,
     }));
-    const nextNum = stepNumber + 1;
 
-    const data = await fetchAction(nextNum, historyForAPI, currentOutcome);
+    const data = await fetchAction(
+      nextNum,
+      historyForAPI,
+      currentOutcome,
+      choiceForNextStep || lastSelectedChoice
+    );
     if (data) {
       trackStep2Plus(params.id);
       setCompletedSteps(updatedCompleted);
@@ -260,6 +305,8 @@ export default function IdeaDetailPage() {
     setArtifacts([]);
     setCurrentOutcome(null);
     setTemplateValues({});
+    setIsCommitmentStep(false);
+    setLastSelectedChoice(null);
     setFeedback(emptyFeedback);
     setIsRestored(false);
     setRestoredSavedAt(null);

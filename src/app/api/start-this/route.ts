@@ -6,7 +6,7 @@ import { StepContext } from "@/lib/types";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { id, stepNumber, previousSteps, lastOutcome } = body;
+    const { id, stepNumber, previousSteps, lastOutcome, selectedChoice } = body;
 
     if (!id || typeof id !== "string") {
       return NextResponse.json({ error: "Missing idea id" }, { status: 400 });
@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
             stepNumber,
             previousSteps: previousSteps ?? [],
             lastOutcome: lastOutcome ?? undefined,
+            selectedChoice: selectedChoice ?? undefined,
           }
         : undefined;
 

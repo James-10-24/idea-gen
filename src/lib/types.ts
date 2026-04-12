@@ -28,4 +28,6 @@ export interface StepContext {
   stepNumber: number;
   previousSteps: Array<{ stepTitle: string; instruction: string }>;
   lastOutcome?: StepOutcome;
+  /** If user committed to a specific option in a commitment step. */
+  selectedChoice?: string;
 }

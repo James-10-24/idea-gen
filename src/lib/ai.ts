@@ -140,6 +140,11 @@ function startThisPrompt(idea: IdeaFeedItem, context?: StepContext): string {
       .join("\n");
     const directive = outcomeDirective(context.lastOutcome);
     previousContext = `\nPrevious steps completed:\n${stepsSummary}\n\n${directive}\n\nGenerate Step ${stepNum}. Do NOT repeat previous steps.\n`;
+
+    // If user committed to a specific choice, force the AI to build on it
+    if (context.selectedChoice) {
+      previousContext += `\nIMPORTANT: The user has committed to this specific direction: "${context.selectedChoice}"\nYour next step MUST build specifically on this selection. Do not generate generic advice — make it about "${context.selectedChoice}" specifically.\n`;
+    }
   }
 
   return `Idea: "${idea.title}" — ${idea.subtext}

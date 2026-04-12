@@ -65,6 +65,7 @@ export default function IdeaDetailPage() {
   const [currentOutcome, setCurrentOutcome] = useState<StepOutcome | null>(null);
   const [templateValues, setTemplateValues] = useState<Record<number, string>>({});
   const [isCommitmentStep, setIsCommitmentStep] = useState(false);
+  const [hasCommitted, setHasCommitted] = useState(false);
   const [isFinalStep, setIsFinalStep] = useState(false);
   const [hasFinalized, setHasFinalized] = useState(false);
   const [lastSelectedChoice, setLastSelectedChoice] = useState<string | null>(null);
@@ -194,6 +195,7 @@ export default function IdeaDetailPage() {
       setCurrentOutcome(null);
       setTemplateValues({});
       setIsCommitmentStep(false);
+      setHasCommitted(false);
       setIsFinalStep(false);
       setHasFinalized(false);
       setLastSelectedChoice(null);
@@ -244,7 +246,7 @@ export default function IdeaDetailPage() {
     // --- Commitment intercept ---
     // If current step was a list step (not already a commitment step),
     // inject a commitment step before calling the AI.
-    if (!isCommitmentStep && needsCommitment(currentStep.template)) {
+    if (!isCommitmentStep && needsCommitment({ template: currentStep.template, ideaId: params.id, alreadyCommitted: hasCommitted })) {
       const commitStep = buildCommitmentStep(currentStep.stepTitle, templateValues);
       setCompletedSteps(updatedCompleted);
       setArtifacts(updatedArtifacts);
@@ -253,6 +255,7 @@ export default function IdeaDetailPage() {
       setCurrentOutcome(null);
       setTemplateValues({});
       setIsCommitmentStep(true);
+      setHasCommitted(true);
       setNextStepLoading(false);
       setTimeout(() => {
         outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -360,6 +363,7 @@ export default function IdeaDetailPage() {
     setCurrentOutcome(null);
     setTemplateValues({});
     setIsCommitmentStep(false);
+    setHasCommitted(false);
     setIsFinalStep(false);
     setHasFinalized(false);
     setLastSelectedChoice(null);

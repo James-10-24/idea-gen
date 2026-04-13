@@ -31,6 +31,7 @@ import WhatsNext from "@/components/idea/WhatsNext";
 import FirstStepToast from "@/components/idea/FirstStepToast";
 import ResumeBanner from "@/components/idea/ResumeBanner";
 import OutcomeCard, { OutcomeState, emptyOutcome } from "@/components/idea/OutcomeCard";
+import UpgradeNudge from "@/components/idea/UpgradeNudge";
 import { getStep1Prefills } from "@/lib/prefills";
 
 interface CompletedStep {
@@ -552,7 +553,10 @@ export default function IdeaDetailPage() {
       </div>
 
       {hasFinalized && (
-        <WhatsNext suggestions={getSuggestions(params.id)} />
+        <>
+          <WhatsNext suggestions={getSuggestions(params.id)} />
+          <UpgradeNudge />
+        </>
       )}
 
       {showRecap && (

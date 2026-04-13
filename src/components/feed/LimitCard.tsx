@@ -6,8 +6,9 @@ import { loadStats, isAtLimit } from "@/lib/sessionStats";
 export default function LimitCard() {
   const [atLimit, setAtLimit] = useState(false);
   const [outputCount, setOutputCount] = useState(0);
-  const [showPlan, setShowPlan] = useState(false);
+  const [showEmail, setShowEmail] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   useEffect(() => {
     const stats = loadStats();
@@ -16,6 +17,28 @@ export default function LimitCard() {
   }, []);
 
   if (!atLimit) return null;
+
+  const handleCheckout = async () => {
+    setCheckoutLoading(true);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      // Stripe not configured — fall back to email capture
+      setShowEmail(true);
+    } catch {
+      setShowEmail(true);
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
 
   return (
     <div className="mb-3 animate-in-fast overflow-hidden rounded-2xl bg-zinc-900 shadow-lg">
@@ -90,13 +113,21 @@ export default function LimitCard() {
 
       {/* CTA area */}
       <div className="px-5 pt-4 pb-5">
-        {!showPlan ? (
+        {!showEmail ? (
           <div className="flex gap-2">
             <button
-              onClick={() => setShowPlan(true)}
-              className="flex-1 rounded-xl bg-white px-4 py-3 text-[14px] font-semibold text-zinc-900 transition-all duration-150 hover:bg-zinc-100 active:scale-[0.97]"
+              onClick={handleCheckout}
+              disabled={checkoutLoading}
+              className="flex-1 rounded-xl bg-white px-4 py-3 text-[14px] font-semibold text-zinc-900 transition-all duration-150 hover:bg-zinc-100 active:scale-[0.97] disabled:opacity-60"
             >
-              Unlock unlimited — RM29/mo
+              {checkoutLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-700" />
+                  Loading…
+                </span>
+              ) : (
+                "Unlock unlimited — RM29/mo"
+              )}
             </button>
             <button
               onClick={() => setAtLimit(false)}

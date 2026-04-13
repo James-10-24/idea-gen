@@ -102,6 +102,13 @@ export function getReturnMessage(stats: SessionStats): ReturnMessage | null {
 const FREE_LIMIT = 3;
 
 export function isAtLimit(stats?: SessionStats): boolean {
+  // Pro users are never at limit
+  if (typeof window !== "undefined") {
+    try {
+      const pro = localStorage.getItem("idea-income-pro");
+      if (pro && JSON.parse(pro).active === true) return false;
+    } catch { /* ignore */ }
+  }
   const s = stats ?? loadStats();
   return s.totalOutputs >= FREE_LIMIT;
 }

@@ -23,6 +23,7 @@ export default function PrimaryActionPanel({
   atLimit,
 }: PrimaryActionPanelProps) {
   const [msgIndex, setMsgIndex] = useState(0);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   useEffect(() => {
     if (!loading) return;
@@ -31,6 +32,26 @@ export default function PrimaryActionPanel({
     }, 1500);
     return () => clearInterval(interval);
   }, [loading]);
+
+  const handleCheckout = async () => {
+    setCheckoutLoading(true);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+    } catch {
+      // Stripe not configured — redirect to home for email capture
+    }
+    setCheckoutLoading(false);
+    window.location.href = "/";
+  };
 
   if (atLimit) {
     return (
@@ -48,12 +69,13 @@ export default function PrimaryActionPanel({
             </p>
           </div>
           <div className="flex gap-2 border-t border-white/[0.06] px-4 py-3">
-            <Link
-              href="/"
-              className="flex-1 rounded-xl bg-white px-4 py-2.5 text-center text-[13px] font-semibold text-zinc-900 transition-all active:scale-[0.97]"
+            <button
+              onClick={handleCheckout}
+              disabled={checkoutLoading}
+              className="flex-1 rounded-xl bg-white px-4 py-2.5 text-center text-[13px] font-semibold text-zinc-900 transition-all active:scale-[0.97] disabled:opacity-60"
             >
-              Unlock — RM29/mo
-            </Link>
+              {checkoutLoading ? "Loading…" : "Unlock — RM29/mo"}
+            </button>
             <Link
               href="/"
               className="flex-1 rounded-xl px-4 py-2.5 text-center text-[13px] font-medium text-white/30 transition-colors hover:text-white/50 active:scale-[0.97]"

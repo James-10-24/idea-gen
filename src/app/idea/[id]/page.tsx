@@ -539,6 +539,7 @@ export default function IdeaDetailPage() {
             isFirstStep={stepNumber === 1 && completedSteps.length === 0}
             isRestored={isRestored}
             isFinalStep={isFinalStep}
+            ideaId={params.id}
             outcome={currentOutcome}
             onOutcomeSelect={handleOutcomeSelect}
             onNextStep={handleNextStep}

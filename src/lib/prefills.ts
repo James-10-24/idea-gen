@@ -189,6 +189,61 @@ const prefillMap: Record<string, string[]> = {
 };
 
 /**
+ * Key field indices for each idea — the 1-2 fields that matter most
+ * for making the output personal. Used by the "Make this yours" nudge.
+ * Index refers to the blank order in the template.
+ */
+const keyFieldsMap: Record<string, { indices: number[]; hint: string }> = {
+  "rent-affordability-reality-check": { indices: [0], hint: "your actual income" },
+  "property-deal-roi-quick-analyzer": { indices: [0, 1], hint: "a real property you're considering" },
+  "cold-outreach-message-generator": { indices: [0, 1], hint: "someone you actually want to reach" },
+  "subscription-leak-finder": { indices: [0, 1], hint: "your real subscriptions" },
+  "explain-anything-simply": { indices: [0], hint: "a topic from your field" },
+  "underserved-niche-finder": { indices: [0], hint: "your industry" },
+  "problem-to-business-idea-converter": { indices: [0], hint: "a real problem you experienced" },
+  "would-you-take-this-trade": { indices: [0], hint: "a ticker you follow" },
+  "validate-before-you-waste-time": { indices: [0, 1], hint: "your actual idea" },
+  "build-a-simple-tool": { indices: [0], hint: "a task you do repeatedly" },
+  "steal-proven-business-ideas-smarter": { indices: [0], hint: "a product you've used" },
+  "turn-skills-into-digital-product": { indices: [0, 1, 2], hint: "things people ask you about" },
+  "hidden-money-in-your-industry": { indices: [0], hint: "your industry" },
+  "turn-one-lesson-linkedin": { indices: [0], hint: "a lesson you learned recently" },
+  "turn-one-opinion-thread": { indices: [0], hint: "an opinion you actually hold" },
+};
+
+/**
+ * Returns key field info for the "Make this yours" nudge.
+ * Returns null if the idea has no prefills or no key fields defined.
+ */
+export function getKeyFields(ideaId: string): { indices: number[]; hint: string } | null {
+  return keyFieldsMap[ideaId] ?? null;
+}
+
+/**
+ * Checks whether the user has personalized the key fields.
+ * Returns true if fewer than half of the key fields differ from prefills.
+ */
+export function isLowEdit(
+  ideaId: string,
+  currentValues: Record<number, string>
+): boolean {
+  const prefills = prefillMap[ideaId];
+  const keyFields = keyFieldsMap[ideaId];
+  if (!prefills || !keyFields) return false;
+
+  let editedCount = 0;
+  for (const idx of keyFields.indices) {
+    const prefill = prefills[idx] ?? "";
+    const current = currentValues[idx] ?? "";
+    if (current !== prefill && current.trim() !== "") {
+      editedCount++;
+    }
+  }
+  // Low edit = user changed fewer than half the key fields
+  return editedCount < Math.max(1, Math.ceil(keyFields.indices.length / 2));
+}
+
+/**
  * Returns a pre-filled values map for an idea's Step 1 template.
  * Returns an empty object for ideas without prefills (AI-generated steps).
  */

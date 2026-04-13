@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { StartThisOutput, StepOutcome } from "@/lib/types";
+import { getKeyFields, isLowEdit } from "@/lib/prefills";
 import OutcomeSelector from "./OutcomeSelector";
 import EditableTemplate, { buildFilledTemplate } from "./EditableTemplate";
 
@@ -53,6 +54,7 @@ interface OutputPanelProps {
   isFirstStep: boolean;
   isRestored?: boolean;
   isFinalStep?: boolean;
+  ideaId?: string;
   outcome: StepOutcome | null;
   onOutcomeSelect: (outcome: StepOutcome) => void;
   onNextStep: () => void;
@@ -68,6 +70,7 @@ export default function OutputPanel({
   isFirstStep,
   isRestored,
   isFinalStep,
+  ideaId,
   outcome,
   onOutcomeSelect,
   onNextStep,
@@ -78,10 +81,12 @@ export default function OutputPanel({
 }: OutputPanelProps) {
   const [msgIndex, setMsgIndex] = useState(0);
   const [templateExpanded, setTemplateExpanded] = useState(false);
+  const [nudgeDismissed, setNudgeDismissed] = useState(false);
 
-  // Reset template collapse when step changes
+  // Reset template collapse and nudge when step changes
   useEffect(() => {
     setTemplateExpanded(false);
+    setNudgeDismissed(false);
   }, [stepNumber]);
 
   useEffect(() => {
@@ -93,8 +98,22 @@ export default function OutputPanel({
     return () => clearInterval(interval);
   }, [nextStepLoading]);
 
-  // Detect if template has pre-filled values (non-empty values on first render)
+  // Detect if template has pre-filled values
   const hasPrefills = Object.keys(templateValues).length > 0;
+
+  // "Make this yours" nudge logic — only on Step 1 with prefills
+  const keyFields = useMemo(
+    () => (ideaId && isFirstStep ? getKeyFields(ideaId) : null),
+    [ideaId, isFirstStep]
+  );
+  const showNudge =
+    isFirstStep &&
+    hasPrefills &&
+    keyFields &&
+    ideaId &&
+    !nudgeDismissed &&
+    outcome !== null &&
+    isLowEdit(ideaId, templateValues);
 
   // Build filled text for copy
   const filledTemplate = buildFilledTemplate(data.template, templateValues);
@@ -103,6 +122,16 @@ export default function OutputPanel({
   // Template line count for collapse
   const templateLines = data.template.split("\n").filter((l) => l.trim() !== "");
   const needsCollapse = templateLines.length > TEMPLATE_PREVIEW_LINES;
+
+  const handleScrollToTemplate = () => {
+    setTemplateExpanded(true);
+    setNudgeDismissed(true);
+    // Scroll down to template area
+    setTimeout(() => {
+      const el = document.querySelector("[data-template-area]");
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+  };
 
   return (
     <div className="mt-6 animate-in">
@@ -157,6 +186,32 @@ export default function OutputPanel({
       {/* Outcome check-in + next step CTA — ABOVE template */}
       <OutcomeSelector selected={outcome} onSelect={onOutcomeSelect} />
 
+      {/* "Make this yours" nudge */}
+      {showNudge && (
+        <div className="mt-3 animate-in-fast rounded-xl border border-amber-200/60 bg-amber-50/50 px-3.5 py-2.5">
+          <p className="text-[12px] font-medium text-amber-800">
+            Quick tweak — make this yours
+          </p>
+          <p className="mt-0.5 text-[11px] leading-[1.5] text-amber-700/70">
+            Swap in {keyFields.hint} so the output fits your situation.
+          </p>
+          <div className="mt-2 flex gap-2">
+            <button
+              onClick={handleScrollToTemplate}
+              className="rounded-lg bg-amber-100 px-3 py-1.5 text-[11px] font-semibold text-amber-800 transition-all active:scale-[0.97]"
+            >
+              Edit draft ↓
+            </button>
+            <button
+              onClick={() => setNudgeDismissed(true)}
+              className="rounded-lg px-3 py-1.5 text-[11px] font-medium text-amber-700/50 transition-colors hover:text-amber-700"
+            >
+              Use as-is
+            </button>
+          </div>
+        </div>
+      )}
+
       <button
         onClick={onNextStep}
         disabled={nextStepLoading || !outcome}
@@ -178,7 +233,10 @@ export default function OutputPanel({
       )}
 
       {/* Editable template — secondary, collapsible */}
-      <div className="mt-5 overflow-hidden rounded-2xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.04)]">
+      <div
+        data-template-area
+        className="mt-5 overflow-hidden rounded-2xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.04)]"
+      >
         <div className="flex items-center justify-between px-4 pt-3.5 pb-0">
           <h4 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-zinc-300">
             {hasPrefills ? "Working draft" : "Fill this in"}
@@ -197,6 +255,7 @@ export default function OutputPanel({
             onChange={onTemplateValuesChange}
             expanded={templateExpanded}
             previewLines={TEMPLATE_PREVIEW_LINES}
+            highlightIndices={showNudge ? keyFields.indices : undefined}
           />
           {needsCollapse && (
             <button

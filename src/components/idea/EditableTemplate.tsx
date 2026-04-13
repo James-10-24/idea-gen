@@ -20,6 +20,8 @@ interface EditableTemplateProps {
   onChange: (values: Record<number, string>) => void;
   expanded: boolean;
   previewLines: number;
+  /** Indices of key fields to visually highlight (for "Make this yours" nudge). */
+  highlightIndices?: number[];
 }
 
 interface TemplatePart {
@@ -69,6 +71,7 @@ export default function EditableTemplate({
   onChange,
   expanded,
   previewLines,
+  highlightIndices,
 }: EditableTemplateProps) {
   const handleChange = useCallback(
     (blankIndex: number, value: string) => {
@@ -108,6 +111,7 @@ export default function EditableTemplate({
         const idx = part.blankIndex!;
         const val = values[idx] ?? "";
         const width = Math.max(val.length, 6);
+        const isHighlighted = highlightIndices?.includes(idx);
 
         return (
           <input
@@ -117,7 +121,11 @@ export default function EditableTemplate({
             onChange={(e) => handleChange(idx, e.target.value)}
             placeholder="..."
             style={{ width: `${width + 2}ch` }}
-            className="mx-0.5 inline-block min-w-[4ch] max-w-[20ch] rounded border-0 border-b-2 border-zinc-200 bg-white px-1.5 py-0.5 text-[13px] text-zinc-900 placeholder-zinc-300 outline-none transition-colors focus:border-zinc-900"
+            className={`mx-0.5 inline-block min-w-[4ch] max-w-[20ch] rounded border-0 border-b-2 px-1.5 py-0.5 text-[13px] text-zinc-900 placeholder-zinc-300 outline-none transition-colors focus:border-zinc-900 ${
+              isHighlighted
+                ? "border-amber-400 bg-amber-50"
+                : "border-zinc-200 bg-white"
+            }`}
           />
         );
       })}

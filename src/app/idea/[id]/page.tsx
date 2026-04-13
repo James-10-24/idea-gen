@@ -31,6 +31,7 @@ import WhatsNext from "@/components/idea/WhatsNext";
 import FirstStepToast from "@/components/idea/FirstStepToast";
 import ResumeBanner from "@/components/idea/ResumeBanner";
 import OutcomeCard, { OutcomeState, emptyOutcome } from "@/components/idea/OutcomeCard";
+import { getStep1Prefills } from "@/lib/prefills";
 
 interface CompletedStep {
   stepTitle: string;
@@ -193,7 +194,7 @@ export default function IdeaDetailPage() {
       setCompletedSteps([]);
       setArtifacts([]);
       setCurrentOutcome(null);
-      setTemplateValues({});
+      setTemplateValues(getStep1Prefills(params.id));
       setIsCommitmentStep(false);
       setHasCommitted(false);
       setIsFinalStep(false);

@@ -93,6 +93,9 @@ export default function OutputPanel({
     return () => clearInterval(interval);
   }, [nextStepLoading]);
 
+  // Detect if template has pre-filled values (non-empty values on first render)
+  const hasPrefills = Object.keys(templateValues).length > 0;
+
   // Build filled text for copy
   const filledTemplate = buildFilledTemplate(data.template, templateValues);
   const fullText = `STEP ${stepNumber}: ${data.stepTitle}\n\n${data.instruction}\n\nTEMPLATE:\n${filledTemplate}`;
@@ -178,11 +181,16 @@ export default function OutputPanel({
       <div className="mt-5 overflow-hidden rounded-2xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.04)]">
         <div className="flex items-center justify-between px-4 pt-3.5 pb-0">
           <h4 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-zinc-300">
-            Fill this in
+            {hasPrefills ? "Working draft" : "Fill this in"}
           </h4>
           <CopyButton text={filledTemplate} label="Copy" />
         </div>
-        <div className="px-4 pt-2 pb-3.5">
+        {hasPrefills && (
+          <p className="px-4 pt-2 text-[11px] text-zinc-400">
+            This is a working draft — edit it or use it as-is.
+          </p>
+        )}
+        <div className={`px-4 ${hasPrefills ? "pt-1.5" : "pt-2"} pb-3.5`}>
           <EditableTemplate
             template={data.template}
             values={templateValues}

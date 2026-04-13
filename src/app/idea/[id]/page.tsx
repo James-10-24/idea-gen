@@ -32,6 +32,8 @@ import FirstStepToast from "@/components/idea/FirstStepToast";
 import ResumeBanner from "@/components/idea/ResumeBanner";
 import OutcomeCard, { OutcomeState, emptyOutcome } from "@/components/idea/OutcomeCard";
 import UpgradeNudge from "@/components/idea/UpgradeNudge";
+import FutureValuePreview from "@/components/idea/FutureValuePreview";
+import SavedOutputsPreview from "@/components/idea/SavedOutputsPreview";
 import { getStep1Prefills } from "@/lib/prefills";
 
 interface CompletedStep {
@@ -554,6 +556,8 @@ export default function IdeaDetailPage() {
 
       {hasFinalized && (
         <>
+          <FutureValuePreview />
+          <SavedOutputsPreview artifacts={artifacts} />
           <WhatsNext suggestions={getSuggestions(params.id)} />
           <UpgradeNudge />
         </>

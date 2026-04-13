@@ -64,6 +64,9 @@ export default function LimitCard() {
         <p className="mt-0.5 text-[11px] text-white/30">
           Cancel anytime. No commitment.
         </p>
+        <p className="mt-2 text-[11px] italic text-white/20">
+          Used by creators, founders, and operators to ship real outputs weekly.
+        </p>
       </div>
 
       {/* Value bullets */}

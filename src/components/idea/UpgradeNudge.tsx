@@ -30,7 +30,7 @@ export default function UpgradeNudge() {
             : `You have ${remaining} free sessions left`}
         </p>
         <p className="mt-0.5 text-[12px] text-zinc-400">
-          You&apos;re building real things. Unlock unlimited to keep shipping.
+          Unlock unlimited for RM29/mo to keep shipping.
         </p>
       </div>
       <div className="flex border-t border-zinc-100 px-4 py-2.5">

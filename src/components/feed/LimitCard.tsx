@@ -30,6 +30,17 @@ export default function LimitCard() {
         <p className="mt-1 text-[13px] leading-[1.5] text-white/60">
           Keep creating posts, messages, and actions without limits.
         </p>
+
+        {/* Price */}
+        <div className="mt-3 flex items-baseline gap-1.5">
+          <span className="text-[24px] font-bold tracking-tight text-white">
+            RM29
+          </span>
+          <span className="text-[13px] text-white/40">/ month</span>
+        </div>
+        <p className="mt-0.5 text-[11px] text-white/30">
+          Cancel anytime. No commitment.
+        </p>
       </div>
 
       {/* Value bullets */}
@@ -85,7 +96,7 @@ export default function LimitCard() {
               onClick={() => setShowPlan(true)}
               className="flex-1 rounded-xl bg-white px-4 py-3 text-[14px] font-semibold text-zinc-900 transition-all duration-150 hover:bg-zinc-100 active:scale-[0.97]"
             >
-              Unlock unlimited
+              Unlock unlimited — RM29/mo
             </button>
             <button
               onClick={() => setAtLimit(false)}
@@ -97,11 +108,14 @@ export default function LimitCard() {
         ) : !emailSent ? (
           <div className="animate-in-fast">
             <p className="text-[13px] font-medium text-white/90">
-              We&apos;re launching soon
+              Unlimited access is opening soon
             </p>
             <p className="mt-0.5 text-[12px] leading-[1.5] text-white/40">
-              Early users get unlimited access first. Drop your email
-              and we&apos;ll let you know.
+              Early users get first access at RM29/mo. Drop your email
+              and we&apos;ll let you know when it&apos;s ready.
+            </p>
+            <p className="mt-1 text-[10px] text-white/20">
+              One email when we launch. No spam.
             </p>
             <div className="mt-3 flex gap-2">
               <input
@@ -123,7 +137,7 @@ export default function LimitCard() {
               You&apos;re on the list
             </p>
             <p className="mt-0.5 text-[12px] text-white/40">
-              We&apos;ll email you when unlimited access is ready.
+              We&apos;ll email you when unlimited access is ready at RM29/mo.
             </p>
           </div>
         )}

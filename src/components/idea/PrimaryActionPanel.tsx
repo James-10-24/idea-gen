@@ -40,8 +40,11 @@ export default function PrimaryActionPanel({
             <p className="text-[14px] font-semibold text-white">
               You&apos;ve used your free sessions
             </p>
-            <p className="mt-0.5 text-[12px] text-white/50">
-              Unlock unlimited to keep shipping.
+            <p className="mt-1 text-[20px] font-bold text-white">
+              RM29<span className="text-[12px] font-normal text-white/40"> / month</span>
+            </p>
+            <p className="mt-0.5 text-[11px] text-white/30">
+              Cancel anytime. No commitment.
             </p>
           </div>
           <div className="flex gap-2 border-t border-white/[0.06] px-4 py-3">
@@ -49,7 +52,7 @@ export default function PrimaryActionPanel({
               href="/"
               className="flex-1 rounded-xl bg-white px-4 py-2.5 text-center text-[13px] font-semibold text-zinc-900 transition-all active:scale-[0.97]"
             >
-              Unlock unlimited
+              Unlock — RM29/mo
             </Link>
             <Link
               href="/"

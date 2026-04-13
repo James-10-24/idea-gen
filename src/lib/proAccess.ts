@@ -1,12 +1,12 @@
 /**
  * Client-side Pro access state.
  *
- * For this MVP, paid state is stored in localStorage after
- * successful Stripe checkout redirect. This is NOT secure —
- * a determined user could set it manually. That's fine for now.
+ * Priority order:
+ * 1. Server check (Supabase subscription table, set by Stripe webhook)
+ * 2. localStorage fallback (for immediate post-checkout activation)
  *
- * When auth is added later, replace this with a server-side
- * check against the Stripe customer/subscription status.
+ * The server is the source of truth. localStorage is used as a
+ * temporary cache so the UI responds instantly after checkout redirect.
  */
 
 const STORAGE_KEY = "idea-income-pro";
@@ -17,7 +17,39 @@ interface ProState {
   activatedAt: number;
 }
 
-export function isPro(): boolean {
+// -----------------------------------------------------------------------
+// Server check (preferred)
+// -----------------------------------------------------------------------
+
+export async function checkProServer(): Promise<boolean> {
+  try {
+    const res = await fetch("/api/pro/status", { cache: "no-store" });
+    if (!res.ok) return false;
+    const data = await res.json();
+    return data.pro === true;
+  } catch {
+    return false;
+  }
+}
+
+// -----------------------------------------------------------------------
+// Combined check: server first, localStorage fallback
+// -----------------------------------------------------------------------
+
+export async function checkPro(): Promise<boolean> {
+  // Try server first (source of truth)
+  const serverPro = await checkProServer();
+  if (serverPro) return true;
+
+  // Fallback to localStorage (covers post-checkout before webhook fires)
+  return isProLocal();
+}
+
+// -----------------------------------------------------------------------
+// localStorage helpers (kept for immediate activation after redirect)
+// -----------------------------------------------------------------------
+
+export function isProLocal(): boolean {
   if (typeof window === "undefined") return false;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);

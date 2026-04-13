@@ -102,13 +102,28 @@ export function getReturnMessage(stats: SessionStats): ReturnMessage | null {
 const FREE_LIMIT = 3;
 
 export function isAtLimit(stats?: SessionStats): boolean {
-  // Pro users are never at limit
+  // Sync check: localStorage Pro fallback (instant, covers post-checkout)
   if (typeof window !== "undefined") {
     try {
       const pro = localStorage.getItem("idea-income-pro");
       if (pro && JSON.parse(pro).active === true) return false;
     } catch { /* ignore */ }
   }
+  const s = stats ?? loadStats();
+  return s.totalOutputs >= FREE_LIMIT;
+}
+
+/**
+ * Async Pro-aware limit check.
+ * Checks server (Supabase) first, then localStorage fallback.
+ * Use this in useEffect — the sync `isAtLimit` is for initial render.
+ */
+export async function isAtLimitAsync(stats?: SessionStats): Promise<boolean> {
+  try {
+    const { checkPro } = await import("@/lib/proAccess");
+    const isPro = await checkPro();
+    if (isPro) return false;
+  } catch { /* fallback to sync */ }
   const s = stats ?? loadStats();
   return s.totalOutputs >= FREE_LIMIT;
 }

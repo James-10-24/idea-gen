@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe, PRICE_ID } from "@/lib/stripe";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 /**
  * POST /api/checkout
  *
  * Creates a Stripe Checkout session and returns the URL.
- * Client redirects the user to complete payment.
+ * If user is signed in, passes their Supabase user_id as metadata
+ * so the webhook can link the subscription to their account.
  */
 export async function POST(req: NextRequest) {
   const stripe = getStripe();
@@ -19,7 +21,20 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const email = body.email || undefined;
+    let email = body.email || undefined;
+
+    // Try to get the signed-in user's info
+    let supabaseUserId: string | undefined;
+    try {
+      const supabase = await createServerSupabaseClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        supabaseUserId = user.id;
+        email = email || user.email;
+      }
+    } catch {
+      // Auth not configured or user not signed in — continue without
+    }
 
     const origin = req.headers.get("origin") || "http://localhost:3000";
 
@@ -31,6 +46,7 @@ export async function POST(req: NextRequest) {
       cancel_url: `${origin}/?cancelled=true`,
       metadata: {
         source: "idea-income-upgrade",
+        ...(supabaseUserId ? { supabase_user_id: supabaseUserId } : {}),
       },
     });
 
